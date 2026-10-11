@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>你的名字 · 个人主页</title>
+<meta name="description" content="吉林大学软件工程本科生 · Java 后端方向 · 算法竞赛选手">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --panel2:#1c222b; --line:#252c37;
+    --text:#e8edf5; --muted:#8b98ab; --accent:#4d9fff; --accent2:#6ee7b7;
+    --warn:#ffb84d;
+    --maxw:980px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif;
+    line-height:1.75;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+  /* ---------- 顶部导航 ---------- */
+  header{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(15,17,21,.82);border-bottom:1px solid var(--line);
+  }
+  header .wrap{display:flex;align-items:center;gap:20px;height:56px}
+  .logo{font-weight:700;letter-spacing:.5px;font-size:15px}
+  .logo span{color:var(--accent)}
+  nav{margin-left:auto;display:flex;gap:20px;font-size:14px}
+  nav a{color:var(--muted)}
+  nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:640px){nav{display:none}}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:78px 0 58px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 400px at 12% -20%,rgba(77,159,255,.13),transparent 65%)}
+  .hero h1{font-size:44px;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+  .hero .tag{font-size:17px;color:var(--muted);margin-bottom:22px}
+  .hero .tag b{color:var(--accent2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+  .chip{
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    font-size:13px;padding:5px 13px;border-radius:999px;
+  }
+  .chip.hi{border-color:rgba(77,159,255,.4);color:var(--accent);background:rgba(77,159,255,.08)}
+  .links{display:flex;flex-wrap:wrap;gap:11px}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--accent);color:#07131f;font-weight:600;font-size:14px;
+    padding:10px 21px;border-radius:9px;transition:.18s;
+  }
+  .btn:hover{transform:translateY(-2px);text-decoration:none;filter:brightness(1.08)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---------- 通用区块 ---------- */
+  section{padding:54px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:21px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  h2:before{content:"";width:3px;height:19px;background:var(--accent);border-radius:2px}
+  .lead{color:var(--muted);font-size:14.5px;margin-bottom:26px}
+
+  /* ---------- 技能 ---------- */
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px}
+  .sk{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:19px}
+  .sk h3{font-size:15px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .sk .lvl{font-size:11px;color:var(--accent);background:rgba(77,159,255,.1);
+    padding:2px 8px;border-radius:5px;font-weight:500}
+  .sk p{font-size:13.5px;color:var(--muted);margin-top:9px;line-height:1.85}
+  .sk .k{color:var(--text)}
+
+  /* ---------- 项目 ---------- */
+  .proj{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px;margin-bottom:16px;transition:.2s}
+  .proj:hover{border-color:rgba(77,159,255,.35)}
+  .proj h3{font-size:18px;margin-bottom:7px}
+  .proj .meta{font-size:12.5px;color:var(--muted);margin-bottom:13px}
+  .proj p{font-size:14px;color:#c3ccda;margin-bottom:15px}
+  .proj ul{list-style:none;font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .proj ul li{padding-left:17px;position:relative;margin-bottom:6px;line-height:1.8}
+  .proj ul li:before{content:"▹";position:absolute;left:0;color:var(--accent)}
+  .proj ul li b{color:var(--text);font-weight:600}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{font-size:12px;background:var(--panel2);border:1px solid var(--line);
+    color:var(--muted);padding:3px 10px;border-radius:6px}
+
+  /* ---------- 时间线 ---------- */
+  .tl{border-left:2px solid var(--line);padding-left:24px;margin-left:5px}
+  .tl .item{position:relative;padding-bottom:26px}
+  .tl .item:last-child{padding-bottom:0}
+  .tl .item:before{content:"";position:absolute;left:-31px;top:8px;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+  .tl h3{font-size:15.5px;margin-bottom:3px}
+  .tl .when{font-size:12.5px;color:var(--accent);margin-bottom:6px}
+  .tl p{font-size:13.5px;color:var(--muted)}
+
+  /* ---------- 联系 ---------- */
+  .contact{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .ct{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:16px 19px;transition:.18s;display:block}
+  .ct:hover{border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
+  .ct .k{font-size:12px;color:var(--muted);margin-bottom:3px}
+  .ct .v{font-size:14px;color:var(--text)}
+
+  footer{padding:34px 0 44px;color:var(--muted);font-size:13px;text-align:center}
+  footer .tip{margin-top:9px;font-size:12px;color:#5b6675}
+
+  /* ---------- 滚动淡入 ---------- */
+  .fade{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+  .fade.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">你的名字<span>.</span></div>
+    <nav>
+      <a href="#about">关于</a>
+      <a href="#skills">技能</a>
+      <a href="#projects">项目</a>
+      <a href="#exp">经历</a>
+      <a href="#contact">联系</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ==================== Hero ==================== -->
+<div class="hero">
+  <div class="wrap">
+    <h1>你的名字</h1>
+    <div class="tag">
+      吉林大学 · 软件工程本科生 · <b>Java 后端方向</b> · 算法竞赛选手
+    </div>
+    <div class="chips">
+      <span class="chip hi">Java / Spring Boot</span>
+      <span class="chip hi">算法与数据结构</span>
+      <span class="chip">C++ / Qt</span>
+      <span class="chip">MySQL / Redis</span>
+      <span class="chip">Docker</span>
+      <span class="chip">Linux</span>
+    </div>
+    <div class="links">
+      <a class="btn" href="#projects">看我的项目</a>
+      <a class="btn ghost" href="https://github.com/你的用户名" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn ghost" href="mailto:你的邮箱@qq.com">邮箱</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ==================== 关于 ==================== -->
+  <section id="about" class="fade">
+    <h2>关于我</h2>
+    <p class="lead">一个喜欢把算法用起来的人</p>
+    <p style="font-size:14.5px;color:#c3ccda;max-width:760px">
+      吉林大学软件工程专业本科生，主攻 Java 后端开发。有算法竞赛训练经历，
+      习惯用「量化指标 + 对比实验」的方式验证方案，而不只是让代码跑起来。
+      最近在做推荐系统方向的个人项目，把兴趣衰减、加权打分这些算法真正落地成了能用的东西。
+    </p>
+  </section>
+
+  <!-- ==================== 技能 ==================== -->
+  <section id="skills" class="fade">
+    <h2>技能</h2>
+    <p class="lead">按熟练度排列，不写不会的东西</p>
+    <div class="skills">
+
+      <div class="sk">
+        <h3>Java 后端 <span class="lvl">主力</span></h3>
+        <p>
+          <span class="k">Spring Boot</span> 分层架构、RESTful 接口设计<br>
+          <span class="k">MyBatis</span> 手写 SQL、索引优化<br>
+          <span class="k">MySQL</span> 事务、索引、慢查询分析<br>
+          <span class="k">Redis</span> 缓存、分布式锁、ZSet 排行榜
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>算法与数据结构 <span class="lvl">竞赛训练</span></h3>
+        <p>
+          <span class="k">图论</span> 最短路、网络流、树上问题<br>
+          <span class="k">计算几何</span> 凸包、半平面交、旋转卡壳<br>
+          <span class="k">数据结构</span> 线段树、树状数组、平衡树<br>
+          <span class="k">字符串</span> 哈希、KMP、Z 函数
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>C++ / 桌面开发</h3>
+        <p>
+          <span class="k">C++11/17</span> STL、面向对象、模板<br>
+          <span class="k">Qt</span> 信号槽、界面开发基础<br>
+          竞赛主力语言，熟悉性能与内存考量
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>工程工具</h3>
+        <p>
+          <span class="k">Git</span> 分支管理与协作<br>
+          <span class="k">Docker</span> 容器化部署、资源隔离<br>
+          <span class="k">Linux</span> 常用命令、服务部署<br>
+          <span class="k">Maven</span> 依赖管理
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 项目 ==================== -->
+  <section id="projects" class="fade">
+    <h2>项目</h2>
+    <p class="lead">
+      ⚠️ 下面每个项目的数字和链接都要替换成你自己的真实数据，别照抄
+    </p>
+
+    <div class="proj">
+      <h3>每日饮食推荐系统</h3>
+      <div class="meta">个人项目 · Java · 2026.10</div>
+      <p>
+        一个加权打分 + 时间衰减的推荐引擎。解决的核心问题是「怎么让推荐既符合口味、
+        又不重复」。不是套壳调包，打分公式、衰减模型、评估脚本都是自己设计实现的。
+      </p>
+      <ul>
+        <li>设计打分模型 <b>score = α·偏好分 + β·时间分 + γ·场景分 − 惩罚分 + 噪声</b>，各项权重可配置</li>
+        <li>用 <b>1 − exp(−Δt/λ)</b> 建模「想念程度」回升曲线，并按菜系个性化半衰期 λ</li>
+        <li>实现<b>候选池自适应</b>：过滤条件导致候选集为空时逐级放宽，而不是直接报错</li>
+        <li>做消融实验验证时间衰减的贡献：<b>β=0.30 时两菜分差 0.091，β=0 时完全持平</b></li>
+        <li>自建 82 道菜品库，前端提供打分、历史、参数实时调节</li>
+      </ul>
+      <div class="tags">
+        <span>Java</span><span>推荐算法</span><span>时间衰减</span>
+        <span>HTTP Server</span><span>原生 JS</span>
+      </div>
+    </div>
+
+    <!-- 提示：项目 B 的模板。等你做完自己的项目，复制这一段改内容就行
+    <div class="proj">
+      <h3>项目名称</h3>
+      <div class="meta">个人项目 · 技术栈 · 时间</div>
+      <p>一句话说明这个项目解决什么问题。</p>
+      <ul>
+        <li>用<b>加粗</b>标出可量化的成果，比如「QPS 从 20 提升到 80」</li>
+        <li>写清楚你的技术决策和踩过的坑</li>
+      </ul>
+      <div class="tags"><span>标签</span></div>
+    </div>
+    -->
+
+  </section>
+
+  <!-- ==================== 经历 ==================== -->
+  <section id="exp" class="fade">
+    <h2>经历</h2>
+    <p class="lead">时间线倒序，最近的放最上面</p>
+    <div class="tl">
+
+      <div class="item">
+        <h3>吉林大学 · 软件工程</h3>
+        <div class="when">2023.09 – 2027.06（本科在读）</div>
+        <p>
+          ⚠️ 补上你的真实 GPA / 专业排名 / 相关课程。如果有奖学金也写上。
+        </p>
+      </div>
+
+      <div class="item">
+        <h3>算法竞赛</h3>
+        <div class="when">参赛时间</div>
+        <p>
+          ⚠️ 打完区域赛之后在这里写：赛事名称 + 奖项 + 名次。
+          如果拿了奖，这一条要放到最上面，并且加粗。
+          平时训练也可以写：累计刷题量、主攻方向（图论 / 计算几何）。
+        </p>
+      </div>
+
+      <div class="item">
+        <h3>实习经历（如果有）</h3>
+        <div class="when">时间</div>
+        <p>写清楚公司、岗位、你负责的模块和量化成果。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 联系 ==================== -->
+  <section id="contact" class="fade">
+    <h2>联系我</h2>
+    <p class="lead">找实习中，欢迎交流</p>
+    <div class="contact">
+      <a class="ct" href="mailto:你的邮箱@qq.com">
+        <div class="k">邮箱</div><div class="v">你的邮箱@qq.com</div>
+      </a>
+      <a class="ct" href="https://github.com/你的用户名" target="_blank" rel="noopener">
+        <div class="k">GitHub</div><div class="v">github.com/你的用户名</div>
+      </a>
+      <a class="ct" href="#">
+        <div class="k">微信</div><div class="v">你的微信号</div>
+      </a>
+      <a class="ct" href="你的简历.pdf" target="_blank">
+        <div class="k">简历</div><div class="v">下载 PDF 版</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div>© <span id="year"></span> 你的名字 · 吉林大学软件工程</div>
+  <div class="tip">
+    手写 HTML/CSS，无框架 · 托管于 GitHub Pages
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // 滚动淡入
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade').forEach((el, i) => {
+    el.style.transitionDelay = Math.min(i * 60, 240) + 'ms';
+    io.observe(el);
+  });
+</script>
+</body>
+</html>
