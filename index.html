@@ -113,9 +113,102 @@
   /* ---------- 滚动淡入 ---------- */
   .fade{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
   .fade.in{opacity:1;transform:none}
+  /* ============ 动态效果 ============ */
+  /* 顶部滚动进度条 */
+  #progress{
+    position:fixed;top:0;left:0;height:2px;width:0;z-index:99;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 10px rgba(77,159,255,.7);transition:width .08s linear;
+  }
+
+  /* 鼠标跟随光晕（整页氛围） */
+  #glow{
+    position:fixed;width:600px;height:600px;pointer-events:none;z-index:0;
+    border-radius:50%;opacity:.5;filter:blur(80px);
+    background:radial-gradient(circle,rgba(77,159,255,.16),transparent 62%);
+    transform:translate(-50%,-50%);
+    transition:opacity .35s ease;
+  }
+  main,header,footer,.hero{position:relative;z-index:1}
+
+  /* Hero 粒子画布 */
+  .hero{overflow:hidden}
+  #stars{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+  .hero .wrap{position:relative;z-index:2}
+
+  /* 渐变流动的主标题 */
+  .hero h1{
+    background:linear-gradient(100deg,#e8edf5 12%,var(--accent) 38%,var(--accent2) 55%,#e8edf5 82%);
+    background-size:280% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    animation:flow 9s ease-in-out infinite;
+  }
+  @keyframes flow{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+
+  /* 打字机英文副标题 */
+  .typed{
+    font-family:"SF Mono",Consolas,"Courier New",monospace;
+    font-size:15px;letter-spacing:.3px;color:var(--muted);
+    margin:-6px 0 18px;min-height:24px;
+  }
+  .typed .tw{color:var(--accent2)}
+  .typed .cur{
+    display:inline-block;width:8px;height:16px;margin-left:2px;
+    background:var(--accent);vertical-align:-2px;
+    animation:blink 1.05s steps(2,start) infinite;
+  }
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+  /* 按钮：光泽扫过 + 抬升 */
+  .btn{position:relative;overflow:hidden}
+  .btn:after{
+    content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+    transform:skewX(-18deg);
+  }
+  .btn:hover:after{animation:sheen .8s ease}
+  @keyframes sheen{to{left:170%}}
+
+  /* 卡片：悬停浮起 */
+  .sk,.proj{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+  .sk:hover,.proj:hover{
+    transform:translateY(-5px);
+    box-shadow:0 14px 38px -14px rgba(77,159,255,.35);
+  }
+
+  /* 技能条（进入视口时展开） */
+  .skillbar{height:4px;border-radius:3px;background:#20262f;margin-top:11px;overflow:hidden}
+  .skillbar i{
+    display:block;height:100%;width:0;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width 1.15s cubic-bezier(.22,.8,.3,1);
+  }
+  .sk.in .skillbar i{width:var(--w)}
+
+  /* 时间线圆点脉冲 */
+  .tl .item:before{animation:pulse 2.6s ease-out infinite}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 3px var(--bg),0 0 0 4px rgba(77,159,255,.5)}
+    70%{box-shadow:0 0 0 3px var(--bg),0 0 0 12px rgba(77,159,255,0)}
+    100%{box-shadow:0 0 0 3px var(--bg),0 0 0 4px rgba(77,159,255,0)}
+  }
+
+  /* 区块淡入：错落延迟交给 JS */
+  .fade{transition-duration:.7s}
+
+  @media(prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation:none!important;transition:none!important}
+  }
 </style>
 </head>
 <body>
+
+<div id="progress"></div>
+<div id="glow"></div>
 
 <header>
   <div class="wrap">
@@ -132,11 +225,13 @@
 
 <!-- ==================== Hero ==================== -->
 <div class="hero">
+  <canvas id="stars"></canvas>
   <div class="wrap">
     <h1>chaoson</h1>
     <div class="tag">
       吉林大学 · 软件工程本科生 · <b>Java 后端方向</b> · 算法竞赛选手
     </div>
+    <div class="typed"><span id="tw"></span><span class="cur"></span></div>
     <div class="chips">
       <span class="chip hi">Java / Spring Boot</span>
       <span class="chip hi">算法与数据结构</span>
@@ -301,6 +396,144 @@
     el.style.transitionDelay = Math.min(i * 60, 240) + 'ms';
     io.observe(el);
   });
+
+  /* ==================== 动态效果 ==================== */
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 1. Hero 粒子星座背景 */
+  (function stars(){
+    const cv = document.getElementById('stars');
+    if (!cv || REDUCED) return;
+    const ctx = cv.getContext('2d', { alpha: true });
+    let W = 0, H = 0, pts = [], raf = null, visible = true;
+
+    function resize(){
+      const r = cv.parentElement.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = r.width; H = r.height;
+      cv.width = W * dpr; cv.height = H * dpr;
+      cv.style.width = W + 'px'; cv.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // 按面积决定粒子数，最多 72 个，保证低端机也流畅
+      const n = Math.min(72, Math.round(W * H / 17000));
+      pts = Array.from({ length: n }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - .5) * .22,
+        vy: (Math.random() - .5) * .22,
+        r: Math.random() * 1.6 + .7
+      }));
+    }
+
+    function frame(){
+      if (!visible) { raf = null; return; }
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of pts){
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 6.2832);
+        ctx.fillStyle = 'rgba(140,190,255,.55)';
+        ctx.fill();
+      }
+
+      // 距离小于 125px 的粒子之间连线，透明度随距离衰减
+      for (let i = 0; i < pts.length; i++){
+        for (let j = i + 1; j < pts.length; j++){
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 15625){
+            const a = (1 - Math.sqrt(d2) / 125) * .3;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = 'rgba(109,231,183,' + a + ')';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    // 移出视口就停掉动画，省电
+    new IntersectionObserver(es => {
+      visible = es[0].isIntersecting;
+      if (visible && !raf) raf = requestAnimationFrame(frame);
+    }, { threshold: 0 }).observe(cv);
+  })();
+
+  /* 2. 打字机副标题 */
+  (function typing(){
+    const el = document.getElementById('tw');
+    if (!el) return;
+    const lines = [
+      'Java Backend Developer',
+      'Spring Boot / MySQL / Redis',
+      'Competitive Programmer',
+      'Graph Theory · Computational Geometry'
+    ];
+    if (REDUCED){ el.textContent = lines[0]; return; }
+    let li = 0, ci = 0, del = false;
+    (function tick(){
+      const cur = lines[li];
+      el.textContent = cur.slice(0, ci);
+      if (!del && ci < cur.length){ ci++; setTimeout(tick, 58); }
+      else if (!del){ del = true; setTimeout(tick, 1500); }
+      else if (ci > 0){ ci--; setTimeout(tick, 26); }
+      else { del = false; li = (li + 1) % lines.length; setTimeout(tick, 260); }
+    })();
+  })();
+
+  /* 3. 顶部滚动进度条 */
+  (function progress(){
+    const bar = document.getElementById('progress');
+    if (!bar) return;
+    const upd = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  })();
+
+  /* 4. 鼠标跟随光晕（用 transform 走合成层，不掉帧） */
+  (function glow(){
+    const g = document.getElementById('glow');
+    if (!g || REDUCED || window.matchMedia('(hover:none)').matches) {
+      if (g) g.style.display = 'none';
+      return;
+    }
+    let tx = window.innerWidth / 2, ty = 220, cx = tx, cy = ty;
+    window.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+    (function loop(){
+      cx += (tx - cx) * .07;
+      cy += (ty - cy) * .07;
+      g.style.transform = `translate(${cx}px,${cy}px) translate(-50%,-50%)`;
+      requestAnimationFrame(loop);
+    })();
+  })();
+
+  /* 5. 技能条：进入视口时按百分比展开 */
+  (function skillbars(){
+    const levels = [88, 82, 66, 74];   // 四张技能卡的强度，按实际水平调
+    document.querySelectorAll('.sk').forEach((card, i) => {
+      const w = levels[i % levels.length];
+      const bar = document.createElement('div');
+      bar.className = 'skillbar';
+      bar.innerHTML = '<i style="--w:' + w + '%"></i>';
+      card.appendChild(bar);
+    });
+    const io2 = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+    }, { threshold: .35 });
+    document.querySelectorAll('.sk').forEach(c => io2.observe(c));
+  })();
 </script>
 </body>
 </html>
