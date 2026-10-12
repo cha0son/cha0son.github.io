@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天吃什么 · 推荐引擎演示</title>
+<meta name="description" content="加权打分 + 时间衰减的每日饮食推荐引擎，Java 实现，这是浏览器移植版演示">
+<meta name="theme-color" content="#12100e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2312100e'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle'%3E%F0%9F%8D%9C%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="brand">
+      <span class="logo">🍜 今天吃什么</span>
+      <span class="sub">加权打分 + 时间衰减推荐引擎</span>
+    </div>
+    <div class="hd-links">
+      <a href="https://github.com/cha0son/food-recommender" target="_blank" rel="noopener">Java 源码</a>
+      <a href="https://cha0son.github.io/" target="_blank" rel="noopener">我的主页</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="demo-note">
+    这是 <b>Java 版推荐引擎的浏览器移植</b>，托管在 GitHub Pages 上，无需后端即可运行。
+    打分公式、时间衰减模型、候选池自适应逻辑与
+    <a href="https://github.com/cha0son/food-recommender" target="_blank" rel="noopener">Java 实现</a>完全一致。
+    数据存在浏览器 localStorage 里，不会上传。
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn on" data-tab="rec">今天吃什么</button>
+    <button class="tab-btn" data-tab="lib">菜品库 · 打分</button>
+    <button class="tab-btn" data-tab="hist">吃过什么</button>
+    <button class="tab-btn" data-tab="algo">算法参数</button>
+  </nav>
+
+  <!-- ============ 推荐 ============ -->
+  <section id="tab-rec">
+    <div class="card filterbar">
+      <label class="f">餐段
+        <select id="meal">
+          <option>早餐</option><option>午餐</option><option>晚餐</option><option>夜宵</option>
+        </select>
+      </label>
+      <label class="f">天气
+        <select id="weather">
+          <option>晴</option><option>阴</option><option>雨</option><option>热</option><option>冷</option>
+        </select>
+      </label>
+      <button class="btn" id="btnRec">🎲 换一换</button>
+      <span class="sub" id="recMeta"></span>
+    </div>
+
+    <div id="poolWarn"></div>
+    <div id="heroBox"></div>
+
+    <div class="card" style="margin-top:18px">
+      <div class="sub" style="margin-bottom:12px">完整排名（前 15）—— 看看算法为什么没选它们</div>
+      <div id="rankList"></div>
+    </div>
+  </section>
+
+  <!-- ============ 菜品库 ============ -->
+  <section id="tab-lib" class="hidden">
+    <div class="card filterbar">
+      <input type="text" id="search" placeholder="搜索菜名 / 菜系 / 标签…">
+      <label class="f">菜系<select id="cuisine"></select></label>
+      <label class="f">只看
+        <select id="filter">
+          <option value="">全部菜品</option>
+          <option value="unrated">未评分</option>
+          <option value="rated">已评分</option>
+          <option value="eaten">吃过的</option>
+        </select>
+      </label>
+      <span class="sub" id="libCount"></span>
+    </div>
+    <div id="libGrid" class="grid"></div>
+  </section>
+
+  <!-- ============ 历史 ============ -->
+  <section id="tab-hist" class="hidden">
+    <div class="card filterbar">
+      <span class="sub" id="histMeta"></span>
+      <button class="btn ghost" id="btnReset" style="margin-left:auto">清空所有数据</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th class="w130">日期</th><th>菜品</th><th class="w110">餐段</th><th class="w90">评分</th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table>
+      <div id="histEmpty" class="empty hidden">还没有记录。去推荐页点「就吃这个」试试。</div>
+    </div>
+  </section>
+
+  <!-- ============ 参数 ============ -->
+  <section id="tab-algo" class="hidden">
+    <div class="card">
+      <div class="sub">调这些参数，回推荐页点「换一换」，观察排名怎么变</div>
+      <div class="formula">score = α·偏好分 + β·时间分 + γ·场景分 − 惩罚分 + 探索噪声</div>
+
+      <div class="slider"><label>α 偏好分权重 <b id="vAlpha"></b></label>
+        <input type="range" id="alpha" min="0" max="1" step="0.01"></div>
+      <div class="slider"><label>β 时间分权重 <b id="vBeta"></b></label>
+        <input type="range" id="beta" min="0" max="1" step="0.01"></div>
+      <div class="slider"><label>γ 场景分权重 <b id="vGamma"></b></label>
+        <input type="range" id="gamma" min="0" max="0.5" step="0.01"></div>
+      <div class="slider"><label>λ 想念半衰期（天） <b id="vLambda"></b></label>
+        <input type="range" id="lambda" min="0.5" max="10" step="0.1"></div>
+      <div class="slider"><label>探索噪声幅度 <b id="vNoise"></b></label>
+        <input type="range" id="noiseAmp" min="0" max="0.15" step="0.005"></div>
+      <div class="slider"><label>排除最近几天吃过的 <b id="vExcl"></b></label>
+        <input type="range" id="excludeRecentDays" min="0" max="10" step="1"></div>
+      <div class="slider"><label>候选池保底数量 <b id="vPool"></b></label>
+        <input type="range" id="minPool" min="1" max="30" step="1"></div>
+
+      <div class="row">
+        <button class="btn" id="btnSave">保存参数</button>
+        <button class="btn ghost" id="btnDefault">恢复默认</button>
+        <label class="f"><input type="checkbox" id="includeRecent"> 调试：把刚吃过的也列出来</label>
+      </div>
+
+      <div class="hint">
+        <b>λ 是什么意思？</b>时间分 = <code>1 − exp(−天数 / λ)</code>。λ 越小越容易腻，隔得越久分数回升越快。<br>
+        例：λ=3 时，隔 1 天回升到 0.28，隔 3 天 0.63，隔 7 天 0.90，隔 14 天 0.99（上限为 1）。<br><br>
+        <b>想自己跑一组消融实验？</b>把 β 拉到 0，就是「纯偏好分、没有时间衰减」的对照组。
+        对比一下：默认参数下，8 天没吃的菜比 4 天没吃的总分高 0.09；β=0 时两者完全持平。
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © <span id="year"></span> chaoson ·
+    <a href="https://github.com/cha0son/food-recommender" target="_blank" rel="noopener">源码</a> ·
+    演示版数据仅存本地浏览器
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="dishes.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

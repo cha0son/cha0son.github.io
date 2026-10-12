@@ -1,0 +1,172 @@
+:root{
+  --bg:#12100e; --card:#1c1917; --card2:#242019; --line:#332c24;
+  --text:#f5f0e8; --muted:#a89c8c; --accent:#ff8a3d; --accent2:#ffb066;
+  --green:#5fd68a; --red:#ff6b6b; --blue:#6bb6ff; --maxw:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(1100px 560px at 18% -10%,#2a2118 0%,var(--bg) 62%);
+  color:var(--text);min-height:100vh;
+  font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px 70px}
+.w130{width:130px}.w110{width:110px}.w90{width:90px}
+.dim{color:var(--muted)}
+.hidden{display:none}
+
+/* ---------- 顶栏 ---------- */
+header{border-bottom:1px solid var(--line);background:rgba(18,16,14,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:40}
+.hd{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:15px 20px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.logo{font-size:19px;font-weight:700;letter-spacing:.4px}
+.sub{color:var(--muted);font-size:13px}
+.hd-links{margin-left:auto;display:flex;gap:18px;font-size:13.5px}
+
+/* ---------- 说明条 ---------- */
+.demo-note{
+  background:#1a1712;border:1px solid #3a3125;border-left:3px solid var(--accent);
+  border-radius:0 10px 10px 0;padding:13px 17px;margin:20px 0 0;
+  font-size:13.5px;color:#e6dccb;line-height:1.8;
+}
+.demo-note b{color:var(--accent2)}
+
+/* ---------- 标签页 ---------- */
+.tabs{display:flex;gap:6px;margin:20px 0 22px;flex-wrap:wrap}
+.tab-btn{
+  background:var(--card);border:1px solid var(--line);color:var(--muted);
+  padding:9px 18px;border-radius:999px;cursor:pointer;font-size:14px;
+  font-family:inherit;transition:.18s;
+}
+.tab-btn:hover{color:var(--text);border-color:#4a3f33}
+.tab-btn.on{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:600}
+
+/* ---------- 通用 ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:19px}
+.filterbar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+label.f{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:7px}
+select,input[type=text]{
+  background:var(--card2);border:1px solid var(--line);color:var(--text);
+  padding:8px 11px;border-radius:9px;font-size:14px;outline:none;font-family:inherit;
+}
+input[type=text]{flex:1;min-width:180px}
+select:focus,input:focus{border-color:var(--accent)}
+input[type=checkbox]{accent-color:var(--accent)}
+.btn{
+  background:var(--accent);border:none;color:#1a1208;font-weight:700;
+  padding:10px 22px;border-radius:10px;cursor:pointer;font-size:14.5px;
+  font-family:inherit;transition:.18s;
+}
+.btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500;font-size:13px;padding:8px 16px}
+.btn.ghost:hover{color:var(--text);border-color:var(--accent);transform:none}
+.btn.sm{padding:5px 12px;font-size:12.5px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:20px}
+
+/* ---------- 提示 ---------- */
+.notice{
+  background:#2a2113;border:1px solid #6b5220;border-left:4px solid var(--accent2);
+  border-radius:0 10px 10px 0;padding:13px 17px;margin-bottom:16px;
+  font-size:13.5px;color:#f0e2c8;line-height:1.75;
+}
+.notice b{color:var(--accent2)}
+
+/* ---------- 主推荐 ---------- */
+.hero{
+  background:linear-gradient(135deg,#2e2317 0%,#1d1813 100%);
+  border:1px solid #4a3a26;border-radius:17px;padding:25px;
+  position:relative;overflow:hidden;
+}
+.hero:before{
+  content:"";position:absolute;top:-40%;right:-10%;width:340px;height:340px;
+  background:radial-gradient(circle,rgba(255,138,61,.16),transparent 68%);
+}
+.hero .tag{
+  display:inline-block;background:rgba(255,138,61,.16);color:var(--accent2);
+  font-size:12px;padding:4px 11px;border-radius:6px;margin-bottom:12px;position:relative;
+}
+.hero h2{margin:0 0 6px;font-size:38px;letter-spacing:.5px;position:relative}
+.hero .meta{color:var(--muted);font-size:13.5px;margin-bottom:15px;position:relative}
+.hero .why{color:#e8ddcc;font-size:14px;line-height:1.85;margin-bottom:19px;position:relative}
+.actions{display:flex;gap:10px;flex-wrap:wrap;position:relative}
+
+/* ---------- 排名列表 ---------- */
+.item{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid #241f1a}
+.item:last-child{border-bottom:none}
+.rank{
+  width:25px;height:25px;flex:none;border-radius:8px;background:var(--card2);
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:600;
+}
+.rank.top{background:var(--accent);color:#1a1208}
+.item .nm{flex:none;width:112px;font-size:14.5px}
+.item .cu{flex:none;width:68px;font-size:12px;color:var(--muted)}
+.item .bars{flex:1;min-width:110px}
+.item .sc{flex:none;width:54px;text-align:right;font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--accent2)}
+.item .act{flex:none}
+
+.bar{height:6px;border-radius:4px;background:#2d2620;overflow:hidden;flex:1;min-width:48px}
+.bar i{display:block;height:100%;border-radius:4px}
+.bk{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--muted);margin:4px 0}
+.bk span:first-child{width:46px;flex:none}
+.bk span:last-child{width:42px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+
+/* ---------- 菜品库 ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:11px}
+.d{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px;transition:.15s}
+.d:hover{border-color:#4a3f33;transform:translateY(-2px)}
+.d .t{font-size:15px;font-weight:600;margin-bottom:3px}
+.d .m{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6}
+.d .m.last{margin:8px 0 0}
+.stars{display:flex;gap:2px}
+.stars i{cursor:pointer;font-size:17px;color:#4a4136;font-style:normal;line-height:1;transition:.12s}
+.stars i.on{color:var(--accent)}
+.stars i:hover{transform:scale(1.18)}
+.badge{
+  display:inline-block;font-size:11px;padding:2px 7px;border-radius:5px;
+  background:#2d2620;color:var(--muted);margin-right:4px;
+}
+
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:500;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12px}
+td{padding:9px 8px;border-bottom:1px solid #241f1a}
+tr:hover td{background:#1f1b16}
+
+/* ---------- 参数页 ---------- */
+.formula{color:var(--accent2);font-size:14px;margin:6px 0 18px;font-family:"SF Mono",Consolas,monospace}
+.slider{display:flex;align-items:center;gap:14px;margin:15px 0}
+.slider label{width:186px;flex:none;font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+.slider label b{color:var(--accent2);font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--accent);height:5px}
+.hint{
+  color:var(--muted);font-size:12.5px;line-height:1.9;margin-top:16px;
+  background:#191512;border-left:3px solid var(--accent);padding:13px 16px;border-radius:0 9px 9px 0;
+}
+code{background:#2d2620;padding:2px 6px;border-radius:5px;font-size:12.5px;color:var(--accent2)}
+
+/* ---------- 其它 ---------- */
+.empty{color:var(--muted);font-size:14px;padding:26px 0;text-align:center}
+footer{margin-top:34px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-align:center}
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(80px);
+  background:var(--accent);color:#1a1208;font-weight:600;padding:12px 26px;
+  border-radius:11px;transition:.28s;opacity:0;pointer-events:none;font-size:14px;z-index:99;
+}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:720px){
+  .hd-links{width:100%;margin-left:0;gap:14px}
+  .item{flex-wrap:wrap;gap:8px}
+  .item .nm{width:auto;flex:1}
+  .item .cu{width:auto}
+  .item .bars{width:100%;flex:none;order:9}
+  .item .sc{width:48px}
+  .hero h2{font-size:29px}
+  .slider label{width:150px;font-size:12.5px}
+  .slider{flex-wrap:wrap}
+  input[type=range]{width:100%}
+}
