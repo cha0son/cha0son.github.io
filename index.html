@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>chaoson · 个人主页</title>
 <meta name="description" content="吉林大学软件工程本科生 · Java 后端方向 · 算法竞赛选手">
+<meta name="theme-color" content="#0f1115">
+
+<!-- 分享到微信/QQ 时的卡片信息 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="chaoson · 个人主页">
+<meta property="og:description" content="吉林大学软件工程本科生 · Java 后端方向 · CCPC 银牌 / ICPC 铜牌">
+<meta property="og:url" content="https://cha0son.github.io/">
+<meta name="twitter:card" content="summary">
+
+<!-- 用内联 SVG 做图标，省一个文件、无需额外请求 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1115'/%3E%3Ctext x='32' y='44' font-size='36' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%234d9fff'%3Ec%3C/text%3E%3C/svg%3E">
 <style>
   :root{
     --bg:#0f1115; --panel:#161a21; --panel2:#1c222b; --line:#252c37;
@@ -203,6 +214,62 @@
   @media(prefers-reduced-motion:reduce){
     *,*:before,*:after{animation:none!important;transition:none!important}
   }
+
+  /* ============ 奖项徽章 ============ */
+  .awards{display:flex;flex-wrap:wrap;gap:9px;margin:-4px 0 24px}
+  .award{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,rgba(255,184,77,.13),rgba(255,138,61,.05));
+    border:1px solid rgba(255,184,77,.32);
+    color:#ffd9a0;font-size:13px;padding:6px 14px;border-radius:9px;
+    transition:.22s;
+  }
+  .award:hover{transform:translateY(-2px);border-color:rgba(255,184,77,.6)}
+  .award i{
+    font-style:normal;font-weight:700;font-size:11.5px;
+    background:rgba(255,184,77,.9);color:#3a2600;
+    padding:1px 7px;border-radius:5px;letter-spacing:.3px;
+  }
+  .award.silver i{background:linear-gradient(135deg,#dfe7f0,#a9b7c9);color:#2a323d}
+  .award.bronze i{background:linear-gradient(135deg,#e4b083,#c88a54);color:#3a2410}
+
+  /* ============ 返回顶部 ============ */
+  #backtop{
+    position:fixed;right:26px;bottom:26px;z-index:60;
+    width:44px;height:44px;border-radius:12px;cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:translateY(14px) scale(.9);pointer-events:none;
+    transition:.25s;
+  }
+  #backtop.on{opacity:1;transform:none;pointer-events:auto}
+  #backtop:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px)}
+  #backtop svg{width:19px;height:19px}
+  @media(max-width:640px){#backtop{right:16px;bottom:16px;width:40px;height:40px}}
+
+  /* ============ 移动端菜单 ============ */
+  .burger{
+    display:none;margin-left:auto;background:transparent;border:1px solid var(--line);
+    color:var(--muted);width:38px;height:34px;border-radius:9px;cursor:pointer;
+    align-items:center;justify-content:center;
+  }
+  .burger:hover{color:var(--text);border-color:var(--accent)}
+  .burger svg{width:17px;height:17px}
+  @media(max-width:640px){
+    .burger{display:flex}
+    nav{
+      display:none;position:absolute;top:56px;left:0;right:0;
+      background:rgba(15,17,21,.98);border-bottom:1px solid var(--line);
+      flex-direction:column;gap:0;padding:6px 0;
+    }
+    nav.open{display:flex;animation:dropIn .22s ease}
+    nav a{padding:13px 24px;border-bottom:1px solid #1a1f27}
+    nav a:last-child{border-bottom:none}
+  }
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+  /* 锚点跳转时留出吸顶导航的高度 */
+  section{scroll-margin-top:70px}
 </style>
 </head>
 <body>
@@ -213,13 +280,18 @@
 <header>
   <div class="wrap">
     <div class="logo">chaoson<span>.</span></div>
-    <nav>
+    <nav id="nav">
       <a href="#about">关于</a>
       <a href="#skills">技能</a>
       <a href="#projects">项目</a>
       <a href="#exp">经历</a>
       <a href="#contact">联系</a>
     </nav>
+    <button class="burger" id="burger" aria-label="菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 6h18M3 12h18M3 18h18"/>
+      </svg>
+    </button>
   </div>
 </header>
 
@@ -239,6 +311,11 @@
       <span class="chip">MySQL / Redis</span>
       <span class="chip">Docker</span>
       <span class="chip">Linux</span>
+    </div>
+    <div class="awards">
+      <span class="award silver"><i>银牌</i>2025 CCPC 东北邀请赛</span>
+      <span class="award bronze"><i>铜牌</i>2026 ICPC 沈阳邀请赛</span>
+      <span class="award"><i>国二</i>2026 蓝桥杯 C++ A 组</span>
     </div>
     <div class="links">
       <a class="btn" href="#projects">看我的项目</a>
@@ -385,9 +462,15 @@
   </div>
 </footer>
 
+<div id="backtop" role="button" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</div>
+
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
-
   // 滚动淡入
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
@@ -500,6 +583,26 @@
     };
     window.addEventListener('scroll', upd, { passive: true });
     upd();
+  })();
+
+  /* 3b. 返回顶部 + 移动端菜单 */
+  (function backtop(){
+    const b = document.getElementById('backtop');
+    if (!b) return;
+    const upd = () => b.classList.toggle('on', window.scrollY > 520);
+    window.addEventListener('scroll', upd, { passive: true });
+    b.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    upd();
+  })();
+
+  (function mobileMenu(){
+    const burger = document.getElementById('burger');
+    const nav = document.getElementById('nav');
+    if (!burger || !nav) return;
+    burger.addEventListener('click', e => { e.stopPropagation(); nav.classList.toggle('open'); });
+    nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => nav.classList.remove('open')));
+    document.addEventListener('click', () => nav.classList.remove('open'));
+    window.addEventListener('resize', () => { if (innerWidth > 640) nav.classList.remove('open'); });
   })();
 
   /* 4. 鼠标跟随光晕（用 transform 走合成层，不掉帧） */
