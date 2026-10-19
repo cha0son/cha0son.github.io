@@ -96,25 +96,24 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   const a = run("");
   await sleep(400);
   results.push(["默认加载无异常", a.errors.length === 0, a.errors.join(" | ")]);
-  results.push(["生成 38 个标签 chip", a.nodes.chips.children.length === 38, `实际 ${a.nodes.chips.children.length}`]);
   results.push(["渲染出题目卡片", a.nodes.grid.children.length > 0, `实际 ${a.nodes.grid.children.length} 个节点`]);
   results.push(["命中数已写入", /^\d[\d,]*$/.test(a.nodes.count.textContent), `count="${a.nodes.count.textContent}"`]);
   results.push(["状态栏已更新", a.nodes.statusText.textContent.includes("道有评级的题目"), `"${a.nodes.statusText.textContent}"`]);
   results.push(["无骨架屏残留", !a.nodes.grid.innerHTML.includes("skel") || a.nodes.grid.children.length > 0, ""]);
 
-  // 场景 B: 带 hash 直达 (高难度 + twins 标签)
-  const b = run("#lo=2400&hi=2600&c=hard&t=dp");
+  // 场景 B: 带 hash 直达 (高难度 + 挑战档)
+  const b = run("#lo=2400&hi=2600&c=hard");
   await sleep(400);
   results.push(["hash 加载无异常", b.errors.length === 0, b.errors.join(" | ")]);
   results.push(["hash 生效(难度区间)", b.nodes.rangeLabel.textContent === "2400 – 2600", `"${b.nodes.rangeLabel.textContent}"`]);
   results.push(["hash 生效(有结果)", b.nodes.grid.children.length > 0, `实际 ${b.nodes.grid.children.length}`]);
+  results.push(["卡片不再含标签块", !b.nodes.grid.children.some(x => x._html && x._html.includes('class="tags"')), ""]);
 
-  // 场景 C: 空结果（3400-3500 且 communication，实测全库 0 题）
-  const c = run("#lo=3400&hi=3500&c=hard&t=communication");
+  // 场景 C: 最高难度档（滑条能选到的极值），确认不会出现空结果
+  const c = run("#lo=3400&hi=3500&c=hard");
   await sleep(400);
-  results.push(["零结果不崩", c.errors.length === 0, c.errors.join(" | ")]);
-  results.push(["零结果有提示", c.nodes.grid.innerHTML.includes("没有符合条件的题目"),
-                `children=${c.nodes.grid.children.length}`]);
+  results.push(["最高难度档不崩", c.errors.length === 0, c.errors.join(" | ")]);
+  results.push(["最高难度档有结果", c.nodes.grid.children.length > 0, `实际 ${c.nodes.grid.children.length}`]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;

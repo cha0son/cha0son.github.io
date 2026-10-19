@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CF 题目推荐器 · cha0son</title>
-<meta name="description" content="按难度区间和标签筛选 Codeforces 题目，支持账号短板分析与每日一题。纯前端，数据来自 Codeforces 官方 API。">
+<meta name="description" content="按难度区间筛选 Codeforces 题目，支持账号已通过排除与每日一题。纯前端，数据来自 Codeforces 官方 API。">
 <meta name="theme-color" content="#0b0d10">
 <meta property="og:type" content="website">
 <meta property="og:title" content="CF 题目推荐器">
-<meta property="og:description" content="指定难度区间，按标签短板挑 Codeforces 题目">
+<meta property="og:description" content="指定难度区间挑 Codeforces 题目">
 <meta property="og:url" content="https://cha0son.github.io/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0d10'/%3E%3Ctext x='32' y='45' font-size='34' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%233b82f6'%3ECF%3C/text%3E%3C/svg%3E">
 <style>
@@ -105,21 +105,6 @@
   }
   .ticks{display:flex; justify-content:space-between; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums}
 
-  /* 标签 */
-  .chips{display:flex; flex-wrap:wrap; gap:7px}
-  .chip{
-    padding:5px 12px; border-radius:99px; font-size:12.5px;
-    border:1px solid var(--border); background:var(--surface2); color:var(--muted);
-    transition:.14s; user-select:none;
-  }
-  .chip:hover{border-color:#40506a; color:var(--text)}
-  .chip.on{
-    background:linear-gradient(135deg,rgba(59,130,246,.28),rgba(34,211,238,.18));
-    border-color:#4a8cf7; color:#dbeafe; font-weight:600;
-  }
-  .chip .n{color:var(--dim);font-size:11px;margin-left:4px}
-  .chip.on .n{color:#93c5fd}
-
   /* 分段控件 */
   .seg{display:inline-flex; padding:3px; gap:3px; background:var(--surface2); border-radius:10px; border:1px solid var(--border)}
   .seg button{padding:6px 15px; border-radius:8px; font-size:13px; color:var(--muted); transition:.14s}
@@ -197,12 +182,6 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
   .card:hover h3{color:#bfdbfe}
-  .tags{display:flex; flex-wrap:wrap; gap:5px}
-  .tags span{
-    font-size:11px; padding:2px 8px; border-radius:5px;
-    background:var(--surface2); color:var(--muted); border:1px solid #232830;
-  }
-  .tags span.hit{background:rgba(59,130,246,.16); color:#93c5fd; border-color:#2f4d7a}
   .why{
     font-size:11.5px; line-height:1.5; color:#8290a4;
     padding-top:9px; border-top:1px dashed #232830; margin-top:auto;
@@ -263,7 +242,7 @@
 
 <header class="hero">
   <h1>CF 题目推荐器</h1>
-  <p class="sub">指定难度区间，按标签短板挑题。纯前端运行，数据来自 Codeforces 官方 API（<code>problemset.problems</code>）。</p>
+  <p class="sub">指定难度区间，按热度与新鲜度挑题。纯前端运行，数据来自 Codeforces 官方 API（<code>problemset.problems</code>）。</p>
   <div class="hero-meta">
     <span><span class="dot" id="dot"></span><span id="statusText">正在加载题库…</span></span>
     <button class="ghost" id="btnSync" title="从 Codeforces API 拉取最新题库">同步最新题库</button>
@@ -288,15 +267,6 @@
       <div class="ticks"><span>800</span><span>1500</span><span>2200</span><span>2900</span><span>3500</span></div>
     </div>
 
-    <!-- 标签 -->
-    <div class="field">
-      <div class="field-head">
-        <span class="label">标签（命中任一即可，命中越多排序越靠前）</span>
-        <button class="ghost" id="btnClearTags">清空</button>
-      </div>
-      <div class="chips" id="chips"></div>
-    </div>
-
     <div class="row2">
       <!-- 挑战度 -->
       <div class="field">
@@ -316,7 +286,7 @@
           <input id="handle" placeholder="例如 tourist" autocomplete="off" spellcheck="false">
           <button class="ghost" id="btnAnalyze">分析</button>
         </div>
-        <p class="hint">输入后自动排除<b>已通过</b>的题，并计算每个标签的舒适区上界，优先补短板。提交记录只存在你自己的浏览器里。</p>
+        <p class="hint">输入后自动排除你<b>已经通过</b>的题，并把目标难度对齐到你的 rating。提交记录只存在你自己的浏览器里。</p>
       </div>
     </div>
 
@@ -359,7 +329,7 @@
 
 var CF_API   = "https://codeforces.com/api/";
 var DATA_URL = "data/problems.json";
-var LS_KEY   = "cfrec.data.v2";
+var LS_KEY   = "cfrec.data.v3";
 var LS_PREFS = "cfrec.prefs.v1";
 var MIN_R = 800, MAX_R = 3500, STEP = 100;
 var SIGMA = 110;
@@ -379,14 +349,11 @@ function fmt(n){ return Number(n).toLocaleString("en-US"); }
 var state = {
   payload: null,
   problems: [],
-  tagDict: [],
-  tagIndex: new Map(),
   maxSolved: 1,
   minCid: 1,
   maxCid: 1,
   lo: 1200,
   hi: 1600,
-  sel: new Set(),
   challenge: "mid",
   profile: null,
   seed: 0.42,
@@ -429,10 +396,8 @@ function scheduleRender(){
 /* ---------------- 解码 ---------------- */
 function decode(payload){
   state.payload  = payload;
-  state.tagDict  = payload.tags;
-  state.tagIndex = new Map(payload.tags.map(function(t, i){ return [t, i]; }));
   state.problems = payload.p.map(function(r){
-    return { cid: r[0], idx: r[1], name: r[2], rating: r[3], tags: r[4], solved: r[5] };
+    return { cid: r[0], idx: r[1], name: r[2], rating: r[3], solved: r[4] };
   });
   var mx = 1, mn = Infinity, mc = 0;
   for (var i = 0; i < state.problems.length; i++){
@@ -442,7 +407,6 @@ function decode(payload){
     if (p.cid < mn) mn = p.cid;
   }
   state.maxSolved = mx; state.maxCid = mc; state.minCid = mn;
-  renderChips();
 }
 
 /* ---------------- 数据加载 ---------------- */
@@ -496,11 +460,6 @@ async function syncFromApi(silent){
   var j = await res.json();
   if (j.status !== "OK") throw new Error(j.comment || "API 返回失败");
 
-  var tagSet = new Set();
-  j.result.problems.forEach(function(p){ (p.tags || []).forEach(function(t){ tagSet.add(t); }); });
-  var tags = Array.from(tagSet).sort();
-  var tidx = new Map(tags.map(function(t, i){ return [t, i]; }));
-
   var stats = new Map();
   j.result.problemStatistics.forEach(function(s){
     stats.set(s.contestId + s.index, s.solvedCount || 0);
@@ -509,60 +468,16 @@ async function syncFromApi(silent){
   var rows = [];
   j.result.problems.forEach(function(p){
     if (!p.rating || !p.contestId) return;
-    var tl = (p.tags || []).map(function(t){ return tidx.get(t); })
-                           .sort(function(a, b){ return a - b; });
-    rows.push([p.contestId, p.index, p.name, p.rating, tl, stats.get(p.contestId + p.index) || 0]);
+    rows.push([p.contestId, p.index, p.name, p.rating, stats.get(p.contestId + p.index) || 0]);
   });
   rows.sort(function(a, b){ return a[0] - b[0] || (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0); });
 
-  var payload = { v: 2, gen: Math.floor(Date.now() / 1000), tags: tags, p: rows };
+  var payload = { v: 3, gen: Math.floor(Date.now() / 1000), p: rows };
   try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e){}
   decode(payload);
   finishLoad(payload.gen);
   if (!silent) toast("已同步，共 " + fmt(rows.length) + " 题");
   return payload;
-}
-
-/* ---------------- 标签 UI ---------------- */
-function countsByTag(){
-  var c = new Array(state.tagDict.length);
-  for (var i = 0; i < c.length; i++) c[i] = 0;
-  for (var j = 0; j < state.problems.length; j++){
-    var p = state.problems[j];
-    if (p.rating < state.lo || p.rating > state.hi) continue;
-    for (var k = 0; k < p.tags.length; k++) c[p.tags[k]]++;
-  }
-  return c;
-}
-
-function renderChips(){
-  var box = $("chips");
-  box.innerHTML = "";
-  var counts = countsByTag();
-  state.tagDict.forEach(function(t, i){
-    var el = document.createElement("button");
-    el.className = "chip" + (state.sel.has(t) ? " on" : "");
-    el.dataset.tag = t;
-    el.innerHTML = esc(t) + '<span class="n">' + fmt(counts[i]) + "</span>";
-    el.onclick = function(){
-      if (state.sel.has(t)) state.sel.delete(t); else state.sel.add(t);
-      el.classList.toggle("on");
-      syncHash();
-      render();
-    };
-    box.appendChild(el);
-  });
-}
-
-// 难度区间变化后只改数字，不重建 DOM
-function updateChipCounts(){
-  var nodes = $("chips").children;
-  if (!nodes.length) return;
-  var counts = countsByTag();
-  for (var i = 0; i < nodes.length && i < counts.length; i++){
-    var n = nodes[i].querySelector(".n");
-    if (n) n.textContent = fmt(counts[i]);
-  }
 }
 
 /* ---------------- 打分 ---------------- */
@@ -574,46 +489,28 @@ function targetRating(){
 }
 
 function makeCtx(seed){
-  var selIdx = new Set();
-  state.sel.forEach(function(t){ selIdx.add(state.tagIndex.get(t)); });
   return {
     target: targetRating(),
-    selIdx: selIdx,
     profile: state.profile,
     maxSolved: state.maxSolved,
     minCid: state.minCid,
     maxCid: state.maxCid,
-    seed: seed,
-    tagDict: state.tagDict
+    seed: seed
   };
 }
 
 function score(p, c){
+  // 难度契合（高斯）：离目标难度越近越高
   var diff = p.rating - c.target;
   var D = Math.exp(-(diff * diff) / (2 * SIGMA * SIGMA));
-
-  var T = 0.5;
-  var prof = c.profile;
-  var sIdx = c.selIdx;
-  if (sIdx.size){
-    var hit = 0, sw = 0;
-    for (var i = 0; i < p.tags.length; i++){
-      var ti = p.tags[i];
-      if (sIdx.has(ti)){ hit++; if (prof) sw += prof.weak[ti]; }
-    }
-    T = hit / sIdx.size;
-    if (prof && hit) T = 0.5 * T + 0.5 * (sw / hit);
-  } else if (prof){
-    var w2 = 0;
-    for (var j = 0; j < p.tags.length; j++) w2 += prof.weak[p.tags[j]];
-    T = p.tags.length ? w2 / p.tags.length : 0.5;
-  }
-
+  // 质量：通过数取对数归一
   var Q = Math.log1p(p.solved) / Math.log1p(Math.max(c.maxSolved, 2));
+  // 新鲜度：contestId 越大越新
   var F = (p.cid - c.minCid) / Math.max(1, c.maxCid - c.minCid);
+  // 抖动：让「换一批」真的换一批
   var J = hash(p.cid * 1000 + p.idx.charCodeAt(0) * 7 + (p.idx.charCodeAt(1) || 0), c.seed);
 
-  return 0.40 * D + 0.25 * T + 0.15 * Q + 0.10 * F + 0.10 * J;
+  return 0.55 * D + 0.25 * Q + 0.10 * F + 0.10 * J;
 }
 
 /* ---------------- 推荐理由 ---------------- */
@@ -628,15 +525,6 @@ function reasons(p, c){
     out.push("区间目标 " + c.target + " 分");
   }
 
-  if (c.profile){
-    var weak = [];
-    for (var i = 0; i < p.tags.length; i++){
-      var ti = p.tags[i];
-      if (c.profile.weak[ti] >= 0.6) weak.push(c.tagDict[ti]);
-    }
-    if (weak.length) out.push("补短板：" + weak.slice(0, 2).join(" / "));
-  }
-
   if (out.length < 2){
     if (p.solved >= 20000) out.push("高热度经典题");
     else if (state.maxCid - p.cid < 45) out.push("近期新题");
@@ -648,34 +536,23 @@ function reasons(p, c){
 function currentPool(){
   var lo = state.lo, hi = state.hi;
   var prof = state.profile;
-  var selIdx = new Set();
-  state.sel.forEach(function(t){ selIdx.add(state.tagIndex.get(t)); });
 
   var pool = [];
   for (var i = 0; i < state.problems.length; i++){
     var p = state.problems[i];
     if (p.rating < lo || p.rating > hi) continue;
     if (prof && prof.solved.has(p.cid + p.idx)) continue;
-    if (selIdx.size){
-      var hitAny = false;
-      for (var k = 0; k < p.tags.length; k++){
-        if (selIdx.has(p.tags[k])){ hitAny = true; break; }
-      }
-      if (!hitAny) continue;
-    }
     pool.push(p);
   }
   return pool;
 }
 
 function render(){
-  updateChipCounts();
   var pool = currentPool();
   $("count").textContent = fmt(pool.length);
 
   if (!pool.length){
-    renderEmpty("没有符合条件的题目",
-      "试试放宽难度区间，或者少选几个标签。标签是「命中任一即可」，选得越多反而越容易筛空。");
+    renderEmpty("没有符合条件的题目", "试试放宽难度区间，或者换个挑战度。");
     return;
   }
 
@@ -708,11 +585,6 @@ function render(){
 
   slice.forEach(function(item){
     var p = item.p;
-    var tags = p.tags.map(function(i){ return state.tagDict[i]; });
-    var tagsHtml = tags.map(function(t){
-      var on = state.sel.has(t) ? " class=\"hit\"" : "";
-      return "<span" + on + ">" + esc(t) + "</span>";
-    }).join("");
 
     var a = document.createElement("a");
     a.className = "card";
@@ -724,7 +596,6 @@ function render(){
       '<div class="card-top"><span class="badge">' + p.rating + "</span>" +
       '<span class="cidx">' + p.cid + esc(p.idx) + "</span></div>" +
       "<h3>" + esc(p.name) + "</h3>" +
-      '<div class="tags">' + tagsHtml + "</div>" +
       '<div class="why">' + esc(reasons(p, ctx)) + "</div>" +
       '<div class="foot"><span>' + fmt(p.solved) + ' 人通过</span><span class="go">去 CF 打开 →</span></div>';
     frag.appendChild(a);
@@ -762,7 +633,6 @@ function daily(){
   pool.sort(function(a, b){ return score(b, ctx) - score(a, ctx); });
 
   var p = pool[Math.floor(hash(seed, 0.5) * Math.min(pool.length, 25))];
-  var tags = p.tags.map(function(i){ return state.tagDict[i]; });
 
   var grid = $("grid");
   grid.innerHTML = "";
@@ -778,7 +648,6 @@ function daily(){
     '<div class="card-top"><span class="badge" style="font-size:14px;padding:4px 11px">' + p.rating + "</span>" +
     '<span class="cidx">' + p.cid + esc(p.idx) + " · 今日一题</span></div>" +
     '<h3 style="font-size:23px;-webkit-line-clamp:3">' + esc(p.name) + "</h3>" +
-    '<div class="tags">' + tags.map(function(t){ return "<span>" + esc(t) + "</span>"; }).join("") + "</div>" +
     '<div class="why" style="font-size:13px">' + esc(reasons(p, makeCtx(0.5))) + "</div>" +
     '<div class="foot"><span>' + fmt(p.solved) + ' 人通过</span><span class="go" style="opacity:1">去 CF 打开 →</span></div>';
   grid.appendChild(a);
@@ -814,7 +683,6 @@ async function analyze(){
     var subs = await cfCall("user.status", {handle: handle, from: 1, count: 10000});
 
     var solved = new Set();
-    var byTag = state.tagDict.map(function(){ return []; });
     var seen = new Set();
     for (var i = 0; i < subs.length; i++){
       var s = subs[i];
@@ -823,36 +691,17 @@ async function analyze(){
       if (seen.has(key)) continue;
       seen.add(key);
       solved.add(key);
-      var r = s.problem.rating;
-      if (!r) continue;
-      var ts = s.problem.tags || [];
-      for (var k = 0; k < ts.length; k++){
-        var ti = state.tagIndex.get(ts[k]);
-        if (ti !== undefined) byTag[ti].push(r);
-      }
-    }
-
-    var base = info.rating || 1200;
-    var weak = new Float32Array(state.tagDict.length);
-    var skill = new Float32Array(state.tagDict.length);
-    var topics = [];
-    for (var j = 0; j < state.tagDict.length; j++){
-      var arr = byTag[j].sort(function(a, b){ return a - b; });
-      if (!arr.length){ weak[j] = 1; skill[j] = 0; continue; }
-      var p75 = arr[Math.min(arr.length - 1, Math.floor(arr.length * 0.75))];
-      skill[j] = p75;
-      weak[j] = clamp((base - p75) / 300, 0, 1);
-      topics.push({ t: state.tagDict[j], n: arr.length, p75: p75, weak: weak[j] });
     }
 
     state.profile = {
-      handle: info.handle, rating: base, maxRating: info.maxRating || 0,
-      solved: solved, weak: weak, skill: skill, topics: topics
+      handle: info.handle,
+      rating: info.rating || 1200,
+      maxRating: info.maxRating || 0,
+      solved: solved
     };
     try {
       localStorage.setItem(LS_PREFS, JSON.stringify({
-        handle: info.handle, lo: state.lo, hi: state.hi,
-        tags: Array.from(state.sel), challenge: state.challenge
+        handle: info.handle, lo: state.lo, hi: state.hi, challenge: state.challenge
       }));
     } catch(e){}
 
@@ -872,18 +721,12 @@ function renderProfile(){
   var el = $("profile");
   if (!p){ el.className = "profile"; el.innerHTML = ""; return; }
 
-  var worst = p.topics.filter(function(x){ return x.n >= 3 && x.weak > 0; })
-                       .sort(function(a, b){ return b.weak - a.weak; })
-                       .slice(0, 3);
-
   el.className = "profile show";
   el.innerHTML =
     '<span class="handle">' + esc(p.handle) + "</span>" +
     '<span><span class="k">rating</span> <span class="v" style="color:' + rankColor(p.rating) + '">' + p.rating + "</span></span>" +
     '<span><span class="k">最高</span> <span class="v">' + p.maxRating + "</span></span>" +
     '<span><span class="k">已通过</span> <span class="v">' + fmt(p.solved.size) + "</span></span>" +
-    (worst.length ? '<span><span class="k">最该补</span> <span class="v">' +
-       worst.map(function(x){ return esc(x.t); }).join(" / ") + "</span></span>" : "") +
     '<button class="ghost" id="btnReset" style="margin-left:auto">清除</button>';
 
   $("btnReset").onclick = function(){
@@ -898,9 +741,6 @@ function renderProfile(){
 /* ---------------- URL 状态 ---------------- */
 function syncHash(){
   var parts = ["lo=" + state.lo, "hi=" + state.hi, "c=" + state.challenge];
-  if (state.sel.size){
-    parts.push("t=" + Array.from(state.sel).map(encodeURIComponent).join(","));
-  }
   history.replaceState(null, "", "#" + parts.join("&"));
 }
 
@@ -911,12 +751,6 @@ function readHash(){
   if (q.has("lo")) state.lo = clamp(+q.get("lo") || 1200, MIN_R, MAX_R - STEP);
   if (q.has("hi")) state.hi = clamp(+q.get("hi") || 1600, state.lo + STEP, MAX_R);
   if (q.has("c") && ["easy","mid","hard"].indexOf(q.get("c")) >= 0) state.challenge = q.get("c");
-  if (q.has("t")){
-    q.get("t").split(",").forEach(function(t){
-      var d = decodeURIComponent(t);
-      if (state.tagIndex.has(d)) state.sel.add(d);
-    });
-  }
 }
 
 /* ---------------- 控件绑定 ---------------- */
@@ -971,11 +805,6 @@ function bind(){
 
   $("btnDaily").addEventListener("click", daily);
 
-  $("btnClearTags").addEventListener("click", function(){
-    state.sel.clear();
-    renderChips(); syncHash(); render();
-  });
-
   $("btnAnalyze").addEventListener("click", analyze);
   $("handle").addEventListener("keydown", function(e){ if (e.key === "Enter") analyze(); });
 
@@ -1005,7 +834,6 @@ async function main(){
   });
   $("lo").value = state.lo;
   $("hi").value = state.hi;
-  renderChips();
   if (state.problems.length) render();
   $("sort").value = state.sort;
 }

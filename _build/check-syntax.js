@@ -27,17 +27,32 @@ try {
 const must = [
   ["双滑条 #lo", /id="lo"/, html],
   ["双滑条 #hi", /id="hi"/, html],
-  ["标签容器", /id="chips"/, html],
   ["结果网格", /id="grid"/, html],
   ["handle 输入", /id="handle"/, html],
   ["每日一题按钮", /id="btnDaily"/, html],
   ["旧版主页链接", /index\.v1\.html/, html],
   ["调用 CF API", /problemset\.problems/, html],
 ];
+
+// 标签功能已按需求整套移除，这些标识不该再出现
+const mustNot = [
+  ["标签容器 #chips", /id="chips"/],
+  ["标签 chip 样式", /\.chip\s*\{/],
+  ["标签筛选逻辑", /state\.sel\b/],
+  ["标签字典", /tagDict/],
+  ["标签位运算", /\.mask\b/],
+  ["补短板文案", /补短板/],
+];
+
 let ok = true;
 for (const [name, re, src] of must) {
   const pass = re.test(src);
   console.log(`  ${pass ? "PASS" : "FAIL"}  ${name}`);
+  if (!pass) ok = false;
+}
+for (const [name, re] of mustNot) {
+  const pass = !re.test(html);
+  console.log(`  ${pass ? "PASS" : "FAIL"}  已移除: ${name}`);
   if (!pass) ok = false;
 }
 
