@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>580C · C. Kefa and Park</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c2430; --line:#2a3441;
+  --tx:#e6edf3; --mut:#9aa7b8; --dim:#6b7787; --acc:#4d9fff; --ok:#3fb950;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#fbfcfd; --panel:#fff; --panel2:#f2f5f8; --line:#dde4ec;
+         --tx:#1a2029; --mut:#5a6775; --dim:#8b97a6; --acc:#0969da; --ok:#1a7f37; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--tx);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+       "Microsoft YaHei",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px; margin:0 auto; padding:28px 22px 90px}
+a{color:var(--acc); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.top{margin-bottom:22px}
+.crumb{font-size:13px; color:var(--dim); margin-bottom:8px}
+h1{font-size:26px; line-height:1.35; margin:0 0 14px; letter-spacing:-.3px}
+.meta{display:flex; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.meta span{background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+           padding:3px 10px; border-radius:99px}
+
+h2{font-size:13px; text-transform:uppercase; letter-spacing:1.1px; color:var(--dim);
+   margin:34px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line)}
+
+.body p{margin:0 0 14px}
+.body ul,.body ol{margin:0 0 14px; padding-left:24px}
+.body li{margin:5px 0}
+.body img{max-width:100%}
+.body center{display:block; text-align:center; margin:16px 0}
+.body .tex-graphics{max-width:100%}
+.body .section-title{display:none}
+
+.math{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+      font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.09);
+      padding:1px 5px; border-radius:4px; white-space:pre-wrap}
+.math-block{display:block; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+            font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.07);
+            border-left:2px solid rgba(77,159,255,.45);
+            padding:9px 13px; border-radius:0 6px 6px 0; margin:12px 0;
+            overflow-x:auto; white-space:pre-wrap}
+@media (prefers-color-scheme: light){
+  .math{color:#0550ae; background:rgba(9,105,218,.08)}
+  .math-block{color:#0550ae; background:rgba(9,105,218,.06); border-left-color:rgba(9,105,218,.4)}
+}
+
+.sample{margin:16px 0 22px; border:1px solid var(--line); border-radius:10px;
+        overflow:hidden; background:var(--panel)}
+.sample-head{display:flex; align-items:center; justify-content:space-between;
+             padding:8px 12px; background:var(--panel2); border-bottom:1px solid var(--line);
+             font-size:12px; color:var(--mut)}
+.sample-body{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:720px){ .sample-body{grid-template-columns:1fr} }
+.sample-col{padding:12px 14px; min-width:0}
+.sample-col + .sample-col{border-left:1px solid var(--line)}
+@media (max-width:720px){ .sample-col + .sample-col{border-left:none; border-top:1px solid var(--line)} }
+.sample-col h4{margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim)}
+pre{margin:0; font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+    font-size:13px; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--tx)}
+button.copy{background:var(--panel); border:1px solid var(--line); color:var(--mut);
+            font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer}
+button.copy:hover{border-color:var(--acc); color:var(--acc)}
+
+.idx{list-style:none; padding:0; margin:0}
+.idx li{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        margin-bottom:9px; padding:13px 16px; display:flex; justify-content:space-between;
+        align-items:center; gap:14px}
+.idx li:hover{border-color:var(--acc)}
+.idx .t{font-weight:600}
+.idx .id{font-family:ui-monospace,monospace; font-size:12px; color:var(--dim)}
+
+.foot{margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+      font-size:12px; color:var(--dim); line-height:1.9}
+
+@media print{
+  body{background:#fff; color:#000}
+  .sample,.math-block{break-inside:avoid}
+  button.copy,.foot{display:none}
+  h2{margin-top:20px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="crumb"><a href="https://codeforces.com/problemset/problem/580/C" target="_blank" rel="noopener">Codeforces 580C</a>
+      &nbsp;·&nbsp; <a href="index.html">← 返回列表</a>
+      &nbsp;·&nbsp; <a href="../index.html">推荐器</a></div>
+    <h1>C. Kefa and Park</h1>
+    <div class="meta"><span>time limit per test2 seconds</span><span>memory limit per test256 megabytes</span><span>inputstandard input</span><span>outputstandard output</span></div>
+  </div>
+
+  <h2>题目描述</h2>
+<div class="body"><p>Kefa decided to celebrate his first big salary by going to the restaurant. </p><p>He lives by an unusual park. The park is a rooted tree consisting of <span class="tex-span"><i>n</i></span> vertices with the root at vertex <span class="tex-span">1</span>. Vertex <span class="tex-span">1</span> also contains Kefa's house. Unfortunaely for our hero, the park also contains cats. Kefa has already found out what are the vertices with cats in them.</p><p>The leaf vertices of the park contain restaurants. Kefa wants to choose a restaurant where he will go, but unfortunately he is very afraid of cats, so there is no way he will go to the restaurant if the path from the restaurant to his house contains more than <span class="tex-span"><i>m</i></span> <span class="tex-font-style-bf">consecutive</span> vertices with cats. </p><p>Your task is to help Kefa count the number of restaurants where he can go.</p></div>
+
+<h2>输入</h2>
+<div class="body"><p>The first line contains two integers, <span class="tex-span"><i>n</i></span> and <span class="tex-span"><i>m</i></span> (<span class="tex-span">2 ≤ <i>n</i> ≤ 10<sup class="upper-index">5</sup></span>, <span class="tex-span">1 ≤ <i>m</i> ≤ <i>n</i></span>) — the number of vertices of the tree and the maximum number of consecutive vertices with cats that is still ok for Kefa.</p><p>The second line contains <span class="tex-span"><i>n</i></span> integers <span class="tex-span"><i>a</i><sub class="lower-index">1</sub>, <i>a</i><sub class="lower-index">2</sub>, ..., <i>a</i><sub class="lower-index"><i>n</i></sub></span>, where each <span class="tex-span"><i>a</i><sub class="lower-index"><i>i</i></sub></span> either equals to <span class="tex-span">0</span> (then vertex <span class="tex-span"><i>i</i></span> has no cat), or equals to <span class="tex-span">1</span> (then vertex <span class="tex-span"><i>i</i></span> has a cat).</p><p>Next <span class="tex-span"><i>n</i> - 1</span> lines contains the edges of the tree in the format "<span class="tex-span"><i>x</i><sub class="lower-index"><i>i</i></sub></span> <span class="tex-span"><i>y</i><sub class="lower-index"><i>i</i></sub></span>" (without the quotes) (<span class="tex-span">1 ≤ <i>x</i><sub class="lower-index"><i>i</i></sub>, <i>y</i><sub class="lower-index"><i>i</i></sub> ≤ <i>n</i></span>, <span class="tex-span"><i>x</i><sub class="lower-index"><i>i</i></sub> ≠ <i>y</i><sub class="lower-index"><i>i</i></sub></span>), where <span class="tex-span"><i>x</i><sub class="lower-index"><i>i</i></sub></span> and <span class="tex-span"><i>y</i><sub class="lower-index"><i>i</i></sub></span> are the vertices of the tree, connected by an edge. </p><p>It is guaranteed that the given set of edges specifies a tree.</p></div>
+
+<h2>输出</h2>
+<div class="body"><p>A single integer — the number of distinct leaves of a tree the path to which from Kefa's home contains at most <span class="tex-span"><i>m</i></span> consecutive vertices with cats.</p></div>
+
+<h2>样例</h2>
+<div class="sample">
+  <div class="sample-head"><span>样例</span><span class="id">580C</span></div>
+  <div class="sample-body">
+    <div class="sample-col"><h4>输入 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>4 11 1 0 01 21 31 4</pre></div>
+    <div class="sample-col"><h4>输出 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>2</pre></div>
+  </div>
+</div>
+<h2>提示</h2>
+<div class="body"><p>Let us remind you that a <span class="tex-font-style-it">tree</span> is a connected graph on <span class="tex-span"><i>n</i></span> vertices and <span class="tex-span"><i>n</i> - 1</span> edge. A <span class="tex-font-style-it">rooted</span> tree is a tree with a special vertex called <span class="tex-font-style-it">root</span>. In a rooted tree among any two vertices connected by an edge, one vertex is a parent (the one closer to the root), and the other one is a child. A vertex is called a <span class="tex-font-style-it">leaf</span>, if it has no children.</p><p>Note to the first sample test: <img class="tex-graphics" src="https://espresso.codeforces.com/d5a8860bc0e7f2b3af6eb8d282651cf293b2ca73.png" style="max-width: 100.0%;max-height: 100.0%;"/> The vertices containing cats are marked red. The restaurants are at vertices 2, 3, 4. Kefa can't go only to the restaurant located at vertex <span class="tex-span">2</span>.</p><p>Note to the second sample test: <img class="tex-graphics" src="https://espresso.codeforces.com/4e80ab2e30751bfa146f6b2be04649530164fd0a.png" style="max-width: 100.0%;max-height: 100.0%;"/> The restaurants are located at vertices 4, 5, 6, 7. Kefa can't go to restaurants 6, 7.</p></div>
+
+
+  <div class="foot">
+    离线快照 · 抓取于 2026-10-19 23:20 · 原题地址
+    <a href="https://codeforces.com/problemset/problem/580/C" target="_blank" rel="noopener">https://codeforces.com/problemset/problem/580/C</a><br>
+    题目版权归 Codeforces 及原作者所有，此文件仅供个人离线阅读。
+  </div>
+</div>
+<script>
+function copyPre(btn){
+  var pre = btn.closest('.sample-col').querySelector('pre');
+  var t = pre.innerText;
+  var done = function(){ btn.textContent = '已复制'; setTimeout(function(){ btn.textContent='复制'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, function(){ fallback(t, done); });
+  } else { fallback(t, done); }
+}
+function fallback(t, cb){
+  var ta = document.createElement('textarea');
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){ alert('复制失败，请手动选中'); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

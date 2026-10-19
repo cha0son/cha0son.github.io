@@ -52,5 +52,155 @@
     "idx": "D",
     "title": "D. 01 Tree",
     "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 279,
+    "idx": "B",
+    "title": "B. Books",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 455,
+    "idx": "A",
+    "title": "A. Boredom",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 520,
+    "idx": "B",
+    "title": "B. Two Buttons",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 580,
+    "idx": "C",
+    "title": "C. Kefa and Park",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 489,
+    "idx": "C",
+    "title": "C. Given Length and Sum of Digits...",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 550,
+    "idx": "A",
+    "title": "A. Two Substrings",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 276,
+    "idx": "C",
+    "title": "C. Little Girl and Maximum Sum",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 698,
+    "idx": "A",
+    "title": "A. Vacations",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1398,
+    "idx": "C",
+    "title": "C. Good Subarrays",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1526,
+    "idx": "B",
+    "title": "B. I Hate 1111",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1195,
+    "idx": "C",
+    "title": "C. Basketball Exercise",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1201,
+    "idx": "C",
+    "title": "C. Maximum Median",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 371,
+    "idx": "C",
+    "title": "C. Hamburgers",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1324,
+    "idx": "D",
+    "title": "D. Pair of Topics",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 545,
+    "idx": "C",
+    "title": "C. Woodcutters",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 479,
+    "idx": "C",
+    "title": "C. Exams",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 580,
+    "idx": "B",
+    "title": "B. Kefa and Company",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1374,
+    "idx": "D",
+    "title": "D. Zero Remainder Array",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1526,
+    "idx": "C2",
+    "title": "C2. Potions (Hard Version)",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 550,
+    "idx": "C",
+    "title": "C. Divisibility by Eight",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 2,
+    "idx": "A",
+    "title": "A. Winner",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1338,
+    "idx": "A",
+    "title": "A. Powered Addition",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1350,
+    "idx": "B",
+    "title": "B. Orac and Models",
+    "timeLimit": "time limit per test3 seconds"
+  },
+  {
+    "cid": 1919,
+    "idx": "C",
+    "title": "C. Grouping Increases",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 414,
+    "idx": "B",
+    "title": "B. Mashmokh and ACM",
+    "timeLimit": "time limit per test1 second"
   }
 ]

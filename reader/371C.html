@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>371C · C. Hamburgers</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c2430; --line:#2a3441;
+  --tx:#e6edf3; --mut:#9aa7b8; --dim:#6b7787; --acc:#4d9fff; --ok:#3fb950;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#fbfcfd; --panel:#fff; --panel2:#f2f5f8; --line:#dde4ec;
+         --tx:#1a2029; --mut:#5a6775; --dim:#8b97a6; --acc:#0969da; --ok:#1a7f37; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--tx);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+       "Microsoft YaHei",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px; margin:0 auto; padding:28px 22px 90px}
+a{color:var(--acc); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.top{margin-bottom:22px}
+.crumb{font-size:13px; color:var(--dim); margin-bottom:8px}
+h1{font-size:26px; line-height:1.35; margin:0 0 14px; letter-spacing:-.3px}
+.meta{display:flex; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.meta span{background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+           padding:3px 10px; border-radius:99px}
+
+h2{font-size:13px; text-transform:uppercase; letter-spacing:1.1px; color:var(--dim);
+   margin:34px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line)}
+
+.body p{margin:0 0 14px}
+.body ul,.body ol{margin:0 0 14px; padding-left:24px}
+.body li{margin:5px 0}
+.body img{max-width:100%}
+.body center{display:block; text-align:center; margin:16px 0}
+.body .tex-graphics{max-width:100%}
+.body .section-title{display:none}
+
+.math{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+      font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.09);
+      padding:1px 5px; border-radius:4px; white-space:pre-wrap}
+.math-block{display:block; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+            font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.07);
+            border-left:2px solid rgba(77,159,255,.45);
+            padding:9px 13px; border-radius:0 6px 6px 0; margin:12px 0;
+            overflow-x:auto; white-space:pre-wrap}
+@media (prefers-color-scheme: light){
+  .math{color:#0550ae; background:rgba(9,105,218,.08)}
+  .math-block{color:#0550ae; background:rgba(9,105,218,.06); border-left-color:rgba(9,105,218,.4)}
+}
+
+.sample{margin:16px 0 22px; border:1px solid var(--line); border-radius:10px;
+        overflow:hidden; background:var(--panel)}
+.sample-head{display:flex; align-items:center; justify-content:space-between;
+             padding:8px 12px; background:var(--panel2); border-bottom:1px solid var(--line);
+             font-size:12px; color:var(--mut)}
+.sample-body{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:720px){ .sample-body{grid-template-columns:1fr} }
+.sample-col{padding:12px 14px; min-width:0}
+.sample-col + .sample-col{border-left:1px solid var(--line)}
+@media (max-width:720px){ .sample-col + .sample-col{border-left:none; border-top:1px solid var(--line)} }
+.sample-col h4{margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim)}
+pre{margin:0; font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+    font-size:13px; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--tx)}
+button.copy{background:var(--panel); border:1px solid var(--line); color:var(--mut);
+            font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer}
+button.copy:hover{border-color:var(--acc); color:var(--acc)}
+
+.idx{list-style:none; padding:0; margin:0}
+.idx li{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        margin-bottom:9px; padding:13px 16px; display:flex; justify-content:space-between;
+        align-items:center; gap:14px}
+.idx li:hover{border-color:var(--acc)}
+.idx .t{font-weight:600}
+.idx .id{font-family:ui-monospace,monospace; font-size:12px; color:var(--dim)}
+
+.foot{margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+      font-size:12px; color:var(--dim); line-height:1.9}
+
+@media print{
+  body{background:#fff; color:#000}
+  .sample,.math-block{break-inside:avoid}
+  button.copy,.foot{display:none}
+  h2{margin-top:20px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="crumb"><a href="https://codeforces.com/problemset/problem/371/C" target="_blank" rel="noopener">Codeforces 371C</a>
+      &nbsp;·&nbsp; <a href="index.html">← 返回列表</a>
+      &nbsp;·&nbsp; <a href="../index.html">推荐器</a></div>
+    <h1>C. Hamburgers</h1>
+    <div class="meta"><span>time limit per test1 second</span><span>memory limit per test256 megabytes</span><span>inputstdin</span><span>outputstdout</span></div>
+  </div>
+
+  <h2>题目描述</h2>
+<div class="body"><p>Polycarpus loves hamburgers very much. He especially adores the hamburgers he makes with his own hands. Polycarpus thinks that there are only three decent ingredients to make hamburgers from: a bread, sausage and cheese. He writes down the recipe of his favorite "Le Hamburger de Polycarpus" as a string of letters '<span class="tex-font-style-tt">B</span>' (bread), '<span class="tex-font-style-tt">S</span>' (sausage) и '<span class="tex-font-style-tt">C</span>' (cheese). The ingredients in the recipe go from bottom to top, for example, recipe "<span class="tex-font-style-tt">ВSCBS</span>" represents the hamburger where the ingredients go from bottom to top as bread, sausage, cheese, bread and sausage again.</p><p>Polycarpus has <span class="tex-span"><i>n</i><sub class="lower-index"><i>b</i></sub></span> pieces of bread, <span class="tex-span"><i>n</i><sub class="lower-index"><i>s</i></sub></span> pieces of sausage and <span class="tex-span"><i>n</i><sub class="lower-index"><i>c</i></sub></span> pieces of cheese in the kitchen. Besides, the shop nearby has all three ingredients, the prices are <span class="tex-span"><i>p</i><sub class="lower-index"><i>b</i></sub></span> rubles for a piece of bread, <span class="tex-span"><i>p</i><sub class="lower-index"><i>s</i></sub></span> for a piece of sausage and <span class="tex-span"><i>p</i><sub class="lower-index"><i>c</i></sub></span> for a piece of cheese.</p><p>Polycarpus has <span class="tex-span"><i>r</i></span> rubles and he is ready to shop on them. What maximum number of hamburgers can he cook? You can assume that Polycarpus cannot break or slice any of the pieces of bread, sausage or cheese. Besides, the shop has an unlimited number of pieces of each ingredient.</p></div>
+
+<h2>输入</h2>
+<div class="body"><p>The first line of the input contains a non-empty string that describes the recipe of "Le Hamburger de Polycarpus". The length of the string doesn't exceed 100, the string contains only letters '<span class="tex-font-style-tt">B</span>' (uppercase English <span class="tex-font-style-tt">B</span>), '<span class="tex-font-style-tt">S</span>' (uppercase English <span class="tex-font-style-tt">S</span>) and '<span class="tex-font-style-tt">C</span>' (uppercase English <span class="tex-font-style-tt">C</span>).</p><p>The second line contains three integers <span class="tex-span"><i>n</i><sub class="lower-index"><i>b</i></sub></span>, <span class="tex-span"><i>n</i><sub class="lower-index"><i>s</i></sub></span>, <span class="tex-span"><i>n</i><sub class="lower-index"><i>c</i></sub></span> (<span class="tex-span">1 ≤ <i>n</i><sub class="lower-index"><i>b</i></sub>, <i>n</i><sub class="lower-index"><i>s</i></sub>, <i>n</i><sub class="lower-index"><i>c</i></sub> ≤ 100</span>) — the number of the pieces of bread, sausage and cheese on Polycarpus' kitchen. The third line contains three integers <span class="tex-span"><i>p</i><sub class="lower-index"><i>b</i></sub></span>, <span class="tex-span"><i>p</i><sub class="lower-index"><i>s</i></sub></span>, <span class="tex-span"><i>p</i><sub class="lower-index"><i>c</i></sub></span> (<span class="tex-span">1 ≤ <i>p</i><sub class="lower-index"><i>b</i></sub>, <i>p</i><sub class="lower-index"><i>s</i></sub>, <i>p</i><sub class="lower-index"><i>c</i></sub> ≤ 100</span>) — the price of one piece of bread, sausage and cheese in the shop. Finally, the fourth line contains integer <span class="tex-span"><i>r</i></span> (<span class="tex-span">1 ≤ <i>r</i> ≤ 10<sup class="upper-index">12</sup></span>) — the number of rubles Polycarpus has.</p><p>Please, do not write the <span class="tex-font-style-tt">%lld</span> specifier to read or write 64-bit integers in С++. It is preferred to use the <span class="tex-font-style-tt">cin</span>, <span class="tex-font-style-tt">cout</span> streams or the <span class="tex-font-style-tt">%I64d</span> specifier.</p></div>
+
+<h2>输出</h2>
+<div class="body"><p>Print the maximum number of hamburgers Polycarpus can make. If he can't make any hamburger, print <span class="tex-font-style-tt">0</span>.</p></div>
+
+<h2>样例</h2>
+<div class="sample">
+  <div class="sample-head"><span>样例</span><span class="id">371C</span></div>
+  <div class="sample-body">
+    <div class="sample-col"><h4>输入 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>BBBSSC6 4 11 2 34</pre></div>
+    <div class="sample-col"><h4>输出 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>2</pre></div>
+  </div>
+</div>
+
+  <div class="foot">
+    离线快照 · 抓取于 2026-10-19 23:20 · 原题地址
+    <a href="https://codeforces.com/problemset/problem/371/C" target="_blank" rel="noopener">https://codeforces.com/problemset/problem/371/C</a><br>
+    题目版权归 Codeforces 及原作者所有，此文件仅供个人离线阅读。
+  </div>
+</div>
+<script>
+function copyPre(btn){
+  var pre = btn.closest('.sample-col').querySelector('pre');
+  var t = pre.innerText;
+  var done = function(){ btn.textContent = '已复制'; setTimeout(function(){ btn.textContent='复制'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, function(){ fallback(t, done); });
+  } else { fallback(t, done); }
+}
+function fallback(t, cb){
+  var ta = document.createElement('textarea');
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){ alert('复制失败，请手动选中'); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
