@@ -230,6 +230,43 @@
   }
   .banner.show{display:flex}
 
+  /* ---------- 读题弹窗 ---------- */
+  .modal{
+    position:fixed; inset:0; z-index:80; display:none;
+    background:rgba(0,0,0,.72); backdrop-filter:blur(3px);
+    padding:24px; overflow:auto;
+  }
+  .modal.show{display:flex; align-items:flex-start; justify-content:center}
+  .modal-box{
+    width:100%; max-width:860px; background:var(--bg);
+    border:1px solid var(--border); border-radius:16px;
+    box-shadow:0 24px 70px rgba(0,0,0,.7); overflow:hidden;
+    margin:auto;
+  }
+  .modal-head{
+    position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:10px;
+    padding:13px 18px; background:var(--surface); border-bottom:1px solid var(--border);
+  }
+  .modal-head .t{font-weight:700; font-size:14px; flex:1; min-width:0;
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .modal-body{padding:22px 26px 30px; max-height:none}
+  @media(max-width:720px){
+    .modal{padding:0}
+    .modal-box{border-radius:0; min-height:100vh}
+    .modal-body{padding:18px 16px 40px}
+  }
+  .modal .md p{margin:0 0 13px}
+  .modal .md ul,.modal .md ol{margin:0 0 13px; padding-left:24px}
+  .modal .md li{margin:4px 0}
+  .modal .md pre{background:var(--surface2); border:1px solid var(--border);
+                 border-radius:8px; padding:10px 12px; overflow-x:auto; font-size:13px}
+  .modal .md code{background:var(--surface2); padding:1px 5px; border-radius:4px;
+                  font-family:ui-monospace,Consolas,monospace; font-size:.92em}
+  .modal .md pre code{background:none; padding:0}
+  .modal h4{margin:0 0 8px; font-size:11px; letter-spacing:1px;
+            text-transform:uppercase; color:var(--dim)}
+  .modal .samples{display:grid; gap:12px}
+
   /* toast */
   #toast{
     position:fixed; left:50%; bottom:30px; transform:translate(-50%,20px);
@@ -333,6 +370,18 @@
   <span id="footMeta"></span>
 </footer>
 
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="t" id="mTitle">加载中…</span>
+      <button class="ghost" id="mLang" style="display:none">EN</button>
+      <a class="ghost" id="mCf" target="_blank" rel="noopener">CF ↗</a>
+      <button class="ghost" id="mClose">关闭</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -370,7 +419,8 @@ var state = {
   challenge: "mid",
   profile: null,
   seed: 0.42,
-  sort: "score"
+  sort: "score",
+  lang: "zh-CN"
 };
 
 /* ---------------- 工具 ---------------- */
@@ -612,27 +662,28 @@ function render(){
   slice.forEach(function(item){
     var p = item.p;
     var tag = p.cid + p.idx;
-    var hasLocal = state.readerSet.has(tag);
-    var cfUrl = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
-    // 有离线页就进站内阅读器，没有就回退到 CF
-    var mainHref = hasLocal ? ("reader/" + tag + ".html") : cfUrl;
-    var mainAttrs = hasLocal ? "" : ' target="_blank" rel="noopener"';
+    var cfUrl = cfUrlOf(tag);
+    var liveUrl = LIVE_BASE + "/?id=" + tag;
 
     var el = document.createElement("div");
     el.className = "card";
     el.style.setProperty("--c", rankColor(p.rating));
     el.innerHTML =
-      '<a class="hit" href="' + mainHref + '"' + mainAttrs +
-        ' aria-label="' + esc(tag) + " " + esc(p.name) + '"></a>' +
+      '<a class="hit" href="' + liveUrl + '" aria-label="' + esc(tag) + " " + esc(p.name) + '"></a>' +
       '<div class="card-top"><span class="badge">' + p.rating + "</span>" +
-      (hasLocal ? '<span class="badge-local">离线</span>' : "") +
       '<span class="cidx">' + p.cid + esc(p.idx) + "</span></div>" +
       "<h3>" + esc(p.name) + "</h3>" +
       '<div class="why">' + esc(reasons(p, ctx)) + "</div>" +
       '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-      '<span class="go">' + (hasLocal ? "站内阅读 →" : "去 CF 打开 →") + "</span>" +
-      (hasLocal ? '<a class="cf" href="' + cfUrl + '" target="_blank" rel="noopener" title="在 Codeforces 打开（提交用）">CF ↗</a>' : "") +
+      '<span class="go">站内读题 →</span>' +
+      '<a class="cf" href="' + cfUrl + '" target="_blank" rel="noopener" title="在 Codeforces 打开（提交用）">CF ↗</a>' +
       "</div>";
+    // 左键在当前页弹窗读题；中键/ Ctrl+点击 仍由浏览器开新标签
+    el.querySelector(".hit").addEventListener("click", function(ev){
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault();
+      openReader(tag);
+    });
     frag.appendChild(el);
   });
   grid.appendChild(frag);
@@ -672,25 +723,28 @@ function daily(){
   var grid = $("grid");
   grid.innerHTML = "";
   var dtag = p.cid + p.idx;
-  var dLocal = state.readerSet.has(dtag);
-  var dCf = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
+  var dCf = cfUrlOf(dtag);
   var el = document.createElement("div");
   el.className = "card";
   el.style.setProperty("--c", rankColor(p.rating));
   el.style.gridColumn = "1/-1";
   el.style.padding = "30px";
   el.innerHTML =
-    '<a class="hit" href="' + (dLocal ? "reader/" + dtag + ".html" : dCf) + '"' +
-      (dLocal ? "" : ' target="_blank" rel="noopener"') +
+    '<a class="hit" href="' + LIVE_BASE + "/?id=" + dtag + '"' +
       ' aria-label="' + esc(dtag) + " " + esc(p.name) + '"></a>' +
     '<div class="card-top"><span class="badge" style="font-size:14px;padding:4px 11px">' + p.rating + "</span>" +
     '<span class="cidx">' + p.cid + esc(p.idx) + " · 今日一题</span></div>" +
     '<h3 style="font-size:23px;-webkit-line-clamp:3">' + esc(p.name) + "</h3>" +
     '<div class="why" style="font-size:13px">' + esc(reasons(p, makeCtx(0.5))) + "</div>" +
     '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-    '<span class="go" style="opacity:1">' + (dLocal ? "站内阅读 →" : "去 CF 打开 →") + "</span>" +
-    (dLocal ? '<a class="cf" href="' + dCf + '" target="_blank" rel="noopener">CF ↗</a>' : "") +
+    '<span class="go" style="opacity:1">站内读题 →</span>' +
+    '<a class="cf" href="' + dCf + '" target="_blank" rel="noopener">CF ↗</a>' +
     "</div>";
+  el.querySelector(".hit").addEventListener("click", function(ev){
+    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    openReader(dtag);
+  });
   grid.appendChild(el);
 
   var b = $("banner");
@@ -846,6 +900,15 @@ function bind(){
 
   $("btnDaily").addEventListener("click", daily);
 
+  // 读题弹窗
+  $("mClose").addEventListener("click", closeModal);
+  $("modal").addEventListener("click", function(e){
+    if (e.target === $("modal")) closeModal();
+  });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") closeModal();
+  });
+
   $("btnAnalyze").addEventListener("click", analyze);
   $("handle").addEventListener("keydown", function(e){ if (e.key === "Enter") analyze(); });
 
@@ -856,6 +919,177 @@ function bind(){
     catch (err){ toast("同步失败：" + err.message, true); }
     finally { b.disabled = false; b.textContent = "同步最新题库"; }
   });
+}
+
+/* ---------------- 站内读题（联动 cf-live） ---------------- */
+var LIVE_BASE = "https://cf-live.vercel.app";
+var CF_URL = "https://codeforces.com/problemset/problem/";
+
+function cfUrlOf(tag){
+  var cid = tag.match(/^(\d+)/)[1];
+  return CF_URL + cid + "/" + tag.slice(cid.length);
+}
+
+// 极简 Markdown + LaTeX：先把公式挖出来占位，避免 _ { } * 被 Markdown 规则误伤
+function mdToHtml(md){
+  var math = [];
+  var t = String(md || "");
+  t = t.replace(/\$\$([\s\S]+?)\$\$/g, function(m, tex){
+    math.push({ tex: tex.trim(), block: true });
+    return "\u0000M" + (math.length - 1) + "\u0000";
+  });
+  t = t.replace(/\$([^$\n]+?)\$/g, function(m, tex){
+    math.push({ tex: tex.trim(), block: false });
+    return "\u0000M" + (math.length - 1) + "\u0000";
+  });
+  t = esc(t);
+  t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/(?:^|\n)((?:[-*+]\s+.*(?:\n|$))+)/g, function(m, g){
+    return "\n<ul>" + g.trim().split(/\n/).map(function(l){
+      return "<li>" + l.replace(/^[-*+]\s+/, "") + "</li>";
+    }).join("") + "</ul>";
+  });
+  t = t.replace(/(?:^|\n)((?:\d+\.\s+.*(?:\n|$))+)/g, function(m, g){
+    return "\n<ol>" + g.trim().split(/\n/).map(function(l){
+      return "<li>" + l.replace(/^\d+\.\s+/, "") + "</li>";
+    }).join("") + "</ol>";
+  });
+  var parts = t.split(/\n{2,}/).map(function(chunk){
+    var s = chunk.trim();
+    if (!s) return "";
+    if (/^<(ul|ol|pre)/.test(s)) return s;
+    return "<p>" + s.replace(/\n/g, "<br>") + "</p>";
+  });
+  t = parts.join("\n");
+  t = t.replace(/\u0000M(\d+)\u0000/g, function(m, i){
+    var it = math[+i];
+    var cls = it.block ? "math-block" : "math";
+    return '<span class="' + cls + '">' + esc(it.tex) + "</span>";
+  });
+  return t;
+}
+
+var liveProb = null;
+
+function closeModal(){
+  $("modal").className = "modal";
+  liveProb = null;
+}
+
+function openReader(tag){
+  var cf = cfUrlOf(tag);
+  $("mTitle").textContent = tag + " · 加载中…";
+  $("mCf").href = cf;
+  $("mCf").style.display = "";
+  $("mLang").style.display = "none";
+  $("mBody").innerHTML = '<div class="skel" style="height:120px"></div>' +
+                         '<div class="skel" style="height:180px;margin-top:12px"></div>';
+  $("modal").className = "modal show";
+
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, 10000);
+
+  fetch(LIVE_BASE + "/api/problem?id=" + encodeURIComponent(tag), { signal: ctrl.signal })
+    .then(function(r){
+      return r.json().then(function(b){ return { ok: r.ok, b: b }; });
+    })
+    .then(function(res){
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(res.b.error || "读取失败");
+      liveProb = res.b;
+      renderLive(state.lang || "zh-CN");
+    })
+    .catch(function(e){
+      clearTimeout(timer);
+      renderFallback(tag, e);
+    });
+}
+
+function renderFallback(tag, e){
+  var cf = cfUrlOf(tag);
+  var msg = (e && e.name === "AbortError")
+    ? "在线接口超时（10 秒）"
+    : String((e && e.message) || e);
+  var local = state.readerSet.has(tag)
+    ? '<a class="primary" href="reader/' + tag + '.html" style="display:inline-block;margin-right:8px">读本地缓存页</a>'
+    : "";
+  $("mTitle").textContent = tag + " · 没读到";
+  $("mBody").innerHTML =
+    '<div class="empty"><h4>在线题面没拿到</h4>' +
+    "<p>" + esc(msg) + "<br>可能是网络访问不了 cf-live 的接口（vercel.app 在国内时常被墙）。</p>" +
+    '<p style="margin-top:18px">' + local +
+    '<a class="primary" href="' + cf + '" target="_blank" rel="noopener" style="display:inline-block">去 Codeforces 读</a></p></div>';
+}
+
+function renderLive(lang){
+  var p = liveProb;
+  if (!p) return;
+  var c = (p.translations && p.translations[lang]) || p.content || {};
+  var hasZh = !!(p.translations && p.translations["zh-CN"]);
+  var hasEn = !!(p.translations && p.translations["en"]);
+
+  $("mTitle").textContent = p.title;
+  if (p.cfUrl) $("mCf").href = p.cfUrl;
+  var langBtn = $("mLang");
+  if (hasZh && hasEn){
+    langBtn.style.display = "";
+    langBtn.textContent = lang === "en" ? "中文" : "EN";
+    langBtn.onclick = function(){
+      state.lang = lang === "en" ? "zh-CN" : "en";
+      renderLive(state.lang);
+    };
+  } else {
+    langBtn.style.display = "none";
+  }
+
+  var meta = [];
+  if (p.difficulty) meta.push("洛谷难度 " + p.difficulty);
+  if (p.timeMs) meta.push((p.timeMs / 1000) + " 秒");
+  if (p.memoryKb) meta.push(Math.round(p.memoryKb / 1024) + " MB");
+  if (p.submit) meta.push("通过 " + p.accepted + "/" + p.submit + " (" +
+                          Math.round(p.accepted / p.submit * 100) + "%)");
+
+  var html = '<div style="display:flex;gap:7px;flex-wrap:wrap;font-size:12.5px;margin-bottom:18px">' +
+    meta.map(function(x){
+      return '<span style="background:var(--surface2);border:1px solid var(--border);' +
+             'color:var(--muted);padding:3px 10px;border-radius:99px">' + esc(x) + "</span>";
+    }).join("") + "</div>";
+
+  [["background", "题目背景"], ["description", "题目描述"],
+   ["formatI", "输入格式"], ["formatO", "输出格式"]].forEach(function(pair){
+    var v = c[pair[0]];
+    if (v && String(v).trim()){
+      html += '<div class="label" style="margin:22px 0 8px">' + pair[1] + "</div>" +
+              '<div class="md">' + mdToHtml(v) + "</div>";
+    }
+  });
+
+  if (p.samples && p.samples.length){
+    html += '<div class="label" style="margin:22px 0 8px">样例</div><div class="samples">';
+    p.samples.forEach(function(s, i){
+      html += '<div class="sample"><div class="sample-head"><span>样例 ' + (i + 1) +
+        "</span><span>" + esc(p.id) + "</span></div>" +
+        '<div class="sample-body">' +
+        '<div class="sample-col"><h4>输入</h4><pre>' + esc(s.input) + "</pre></div>" +
+        '<div class="sample-col"><h4>输出</h4><pre>' + esc(s.output) + "</pre></div>" +
+        "</div></div>";
+    });
+    html += "</div>";
+  }
+
+  if (c.hint && String(c.hint).trim()){
+    html += '<div class="label" style="margin:22px 0 8px">提示</div>' +
+            '<div class="md">' + mdToHtml(c.hint) + "</div>";
+  }
+
+  html += '<div style="margin-top:26px;font-size:12px;color:var(--dim)">' +
+    '数据源 <a href="' + esc(p.url) + '" target="_blank" rel="noopener">洛谷</a>' +
+    (p.cfUrl ? ' · <a href="' + esc(p.cfUrl) + '" target="_blank" rel="noopener">Codeforces 提交</a>' : "") +
+    "</div>";
+
+  $("mBody").innerHTML = html;
+  $("modal").querySelector(".modal-box").scrollTop = 0;
 }
 
 /* ---------------- 启动 ---------------- */

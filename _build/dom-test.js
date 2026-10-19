@@ -22,7 +22,9 @@ function makeEl(tag) {
     href: "",
     target: "",
     rel: "",
+    scrollTop: 0,
     dataset: {},
+    listeners: {},
     style: { setProperty() {}, zIndex: "" },
     classList: { add() {}, remove() {}, toggle() {}, contains() { return false; } },
     appendChild(c) {
@@ -34,10 +36,22 @@ function makeEl(tag) {
       }
       return c;
     },
-    addEventListener() {},
-    querySelector() { return { textContent: "" }; },
+    addEventListener(type, fn) {
+      (el.listeners[type] = el.listeners[type] || []).push(fn);
+    },
+    fire(type, ev) {
+      const e = ev || { preventDefault() {}, target: el };
+      (el.listeners[type] || []).forEach((fn) => fn(e));
+      return e;
+    },
+    // 每个选择器返回同一个缓存节点，这样脚本挂上的监听器还能被测试触发
+    _sub: {},
+    querySelector(sel) {
+      if (!el._sub[sel]) el._sub[sel] = makeEl("sub");
+      return el._sub[sel];
+    },
     get innerHTML() { return el._html; },
-    set innerHTML(v) { el._html = v; el.children = []; },
+    set innerHTML(v) { el._html = v; el.children = []; el._sub = {}; },
   };
   return el;
 }
@@ -65,15 +79,23 @@ function run(hash, opts) {
         children: [],
         appendChild(c) { this.children.push(c); },
       }),
+      addEventListener() {},
     },
     localStorage: {
       getItem: k => (store.has(k) ? store.get(k) : null),
       setItem: (k, v) => store.set(k, String(v)),
       removeItem: k => store.delete(k),
     },
+    AbortController: class { constructor(){ this.signal = {}; } abort(){} },
     fetch: async (url) => {
-      // 区分题库和离线页清单两个请求
-      if (String(url).indexOf("manifest.json") >= 0) {
+      const u = String(url);
+      // 站内读题接口
+      if (u.indexOf("/api/problem") >= 0) {
+        if (!opts.live) return { ok: false, json: async () => ({ error: "接口不可用" }) };
+        return { ok: true, json: async () => opts.live };
+      }
+      // 离线页清单
+      if (u.indexOf("manifest.json") >= 0) {
         if (!opts.manifest) return { ok: false, json: async () => ({}) };
         return { ok: true, json: async () => ({ gen: 1, ids: opts.manifest }) };
       }
@@ -123,32 +145,67 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   results.push(["最高难度档不崩", c.errors.length === 0, c.errors.join(" | ")]);
   results.push(["最高难度档有结果", c.nodes.grid.children.length > 0, `实际 ${c.nodes.grid.children.length}`]);
 
-  // 场景 D: 没有离线页清单 → 所有卡片回退到 codeforces.com
+  // 场景 D: 没有离线页清单 → 卡片仍然指向站内读题（走在线接口）
   const d = run("", {});
   await sleep(400);
   const dCards = d.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
   results.push(["无清单时卡片数量正常", dCards.length > 0, `实际 ${dCards.length}`]);
-  results.push(["无清单时全部回退 CF",
-                dCards.every(x => x._html.includes("codeforces.com") && !x._html.includes("reader/")),
-                `异常 ${dCards.filter(x => x._html.includes("reader/")).length} 张`]);
-  results.push(["无清单时没有「离线」标记",
-                dCards.every(x => !x._html.includes("badge-local")), ""]);
+  results.push(["卡片链接指向站内读题页",
+                dCards.every(x => x._html.includes("cf-live.vercel.app/?id=")),
+                `异常 ${dCards.filter(x => !x._html.includes("cf-live.vercel.app/?id=")).length} 张`]);
+  results.push(["每张卡都留了 CF 直达链接",
+                dCards.every(x => x._html.includes("codeforces.com/problemset/problem/")), ""]);
+  results.push(["卡片外层不是 <a>（避免嵌套链接）",
+                dCards.every(x => x.tagName !== "a"),
+                `实际 ${dCards[0] && dCards[0].tagName}`]);
 
-  // 场景 E: 清单包含全部题目 → 所有卡片进站内阅读
-  const allIds = JSON.parse(dataRaw).p.map(r => r[0] + r[1]);
-  const e = run("", { manifest: allIds });
+  // 场景 E: 点卡片 → 弹窗读题
+  const live = {
+    id: "CF1858B", title: "The Walkway", difficulty: 3,
+    timeMs: 1000, memoryKb: 256000, submit: 566, accepted: 273,
+    content: { locale: "zh-CN", background: "", description: "有 $n$ 个长椅。",
+               formatI: "输入 $t$。", formatO: "输出答案。", hint: "" },
+    translations: {
+      "zh-CN": { description: "有 $n$ 个长椅。", formatI: "输入 $t$。", formatO: "输出答案。", hint: "" },
+      en: { description: "There are $n$ benches.", formatI: "Input $t$.", formatO: "Output.", hint: "" },
+    },
+    samples: [{ input: "8\n6 2 2", output: "3 1" }],
+    url: "https://www.luogu.com.cn/problem/CF1858B",
+    cfUrl: "https://codeforces.com/problemset/problem/1858/B",
+  };
+  const e = run("", { live });
   await sleep(400);
-  const eCards = e.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
-  results.push(["有清单时卡片数量正常", eCards.length > 0, `实际 ${eCards.length}`]);
-  results.push(["有清单时全部指向站内 reader/",
-                eCards.every(x => x._html.includes('href="reader/')),
-                `异常 ${eCards.filter(x => !x._html.includes('href="reader/')).length} 张`]);
-  results.push(["有清单时都带「离线」标记",
-                eCards.every(x => x._html.includes("badge-local")), ""]);
-  results.push(["有清单时仍保留 CF 直达链接",
-                eCards.every(x => x._html.includes("codeforces.com") && x._html.includes('class="cf"')), ""]);
-  results.push(["卡片外层不再是 <a>（避免嵌套链接）",
-                eCards.every(x => x.tagName !== "a"), `实际 ${eCards[0] && eCards[0].tagName}`]);
+  results.push(["有清单/无清单都能渲染", e.nodes.grid.children.length > 0, ""]);
+
+  const firstCard = e.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
+  firstCard.querySelector(".hit").fire("click", { preventDefault() {}, metaKey: false, ctrlKey: false });
+  await sleep(300);
+
+  const modal = e.nodes.modal;
+  const mbody = e.nodes.mBody;
+  results.push(["弹窗被打开", modal.className.includes("show"), `className="${modal.className}"`]);
+  results.push(["弹窗标题是题名", e.nodes.mTitle.textContent === "The Walkway",
+                `"${e.nodes.mTitle.textContent}"`]);
+  results.push(["弹窗渲染出题目描述", mbody._html.includes("题目描述"), ""]);
+  results.push(["弹窗渲染出输入/输出格式",
+                mbody._html.includes("输入格式") && mbody._html.includes("输出格式"), ""]);
+  results.push(["弹窗渲染出样例",
+                mbody._html.includes("<pre>") && mbody._html.includes("6 2 2"), ""]);
+  results.push(["弹窗里公式已转换",
+                mbody._html.includes('class="math"') && !/\$\w/.test(mbody._html), ""]);
+  results.push(["弹窗有中英切换按钮", e.nodes.mLang.style.display === "", ""]);
+  results.push(["弹窗保留了 CF 链接",
+                (e.nodes.mCf.href || "").includes("codeforces.com"), e.nodes.mCf.href]);
+
+  // 场景 F: 接口挂了 → 弹窗给兜底
+  const f = run("", {});
+  await sleep(400);
+  const fc = f.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
+  fc.querySelector(".hit").fire("click", { preventDefault() {} });
+  await sleep(300);
+  results.push(["接口失败时弹窗不白屏", f.nodes.mBody._html.includes("没拿到"), ""]);
+  results.push(["接口失败时给出去 CF 的兜底",
+                f.nodes.mBody._html.includes("codeforces.com"), ""]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;
