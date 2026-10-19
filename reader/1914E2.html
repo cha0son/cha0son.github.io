@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>1914E2 · E2. Game with Marbles (Hard Version)</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c2430; --line:#2a3441;
+  --tx:#e6edf3; --mut:#9aa7b8; --dim:#6b7787; --acc:#4d9fff; --ok:#3fb950;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#fbfcfd; --panel:#fff; --panel2:#f2f5f8; --line:#dde4ec;
+         --tx:#1a2029; --mut:#5a6775; --dim:#8b97a6; --acc:#0969da; --ok:#1a7f37; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--tx);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+       "Microsoft YaHei",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px; margin:0 auto; padding:28px 22px 90px}
+a{color:var(--acc); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.top{margin-bottom:22px}
+.crumb{font-size:13px; color:var(--dim); margin-bottom:8px}
+h1{font-size:26px; line-height:1.35; margin:0 0 14px; letter-spacing:-.3px}
+.meta{display:flex; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.meta span{background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+           padding:3px 10px; border-radius:99px}
+
+h2{font-size:13px; text-transform:uppercase; letter-spacing:1.1px; color:var(--dim);
+   margin:34px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line)}
+
+.body p{margin:0 0 14px}
+.body ul,.body ol{margin:0 0 14px; padding-left:24px}
+.body li{margin:5px 0}
+.body img{max-width:100%}
+.body center{display:block; text-align:center; margin:16px 0}
+.body .tex-graphics{max-width:100%}
+.body .section-title{display:none}
+
+.math{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+      font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.09);
+      padding:1px 5px; border-radius:4px; white-space:pre-wrap}
+.math-block{display:block; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+            font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.07);
+            border-left:2px solid rgba(77,159,255,.45);
+            padding:9px 13px; border-radius:0 6px 6px 0; margin:12px 0;
+            overflow-x:auto; white-space:pre-wrap}
+@media (prefers-color-scheme: light){
+  .math{color:#0550ae; background:rgba(9,105,218,.08)}
+  .math-block{color:#0550ae; background:rgba(9,105,218,.06); border-left-color:rgba(9,105,218,.4)}
+}
+
+.sample{margin:16px 0 22px; border:1px solid var(--line); border-radius:10px;
+        overflow:hidden; background:var(--panel)}
+.sample-head{display:flex; align-items:center; justify-content:space-between;
+             padding:8px 12px; background:var(--panel2); border-bottom:1px solid var(--line);
+             font-size:12px; color:var(--mut)}
+.sample-body{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:720px){ .sample-body{grid-template-columns:1fr} }
+.sample-col{padding:12px 14px; min-width:0}
+.sample-col + .sample-col{border-left:1px solid var(--line)}
+@media (max-width:720px){ .sample-col + .sample-col{border-left:none; border-top:1px solid var(--line)} }
+.sample-col h4{margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim)}
+pre{margin:0; font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+    font-size:13px; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--tx)}
+button.copy{background:var(--panel); border:1px solid var(--line); color:var(--mut);
+            font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer}
+button.copy:hover{border-color:var(--acc); color:var(--acc)}
+
+.idx{list-style:none; padding:0; margin:0}
+.idx li{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        margin-bottom:9px; padding:13px 16px; display:flex; justify-content:space-between;
+        align-items:center; gap:14px}
+.idx li:hover{border-color:var(--acc)}
+.idx .t{font-weight:600}
+.idx .id{font-family:ui-monospace,monospace; font-size:12px; color:var(--dim)}
+
+.foot{margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+      font-size:12px; color:var(--dim); line-height:1.9}
+
+@media print{
+  body{background:#fff; color:#000}
+  .sample,.math-block{break-inside:avoid}
+  button.copy,.foot{display:none}
+  h2{margin-top:20px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="crumb"><a href="https://codeforces.com/problemset/problem/1914/E2" target="_blank" rel="noopener">Codeforces 1914E2</a>
+      &nbsp;·&nbsp; <a href="index.html">← 返回列表</a></div>
+    <h1>E2. Game with Marbles (Hard Version)</h1>
+    <div class="meta"><span>time limit per test3.5 seconds</span><span>memory limit per test256 megabytes</span><span>inputstandard input</span><span>outputstandard output</span></div>
+  </div>
+
+  <h2>题目描述</h2>
+<div class="body"><p><span class="tex-font-style-bf">The easy and hard versions of this problem differ only in the constraints on the number of test cases and <span class="math">n</span>. In the hard version, the number of test cases does not exceed <span class="math">10^4</span>, and the sum of values of <span class="math">n</span> over all test cases does not exceed <span class="math">2 \cdot 10^5</span>. Furthermore, there are no additional constraints on <span class="math">n</span> in a single test case.</span></p><p>Recently, Alice and Bob were given marbles of <span class="math">n</span> different colors by their parents. Alice has received <span class="math">a_1</span> marbles of color <span class="math">1</span>, <span class="math">a_2</span> marbles of color <span class="math">2</span>,..., <span class="math">a_n</span> marbles of color <span class="math">n</span>. Bob has received <span class="math">b_1</span> marbles of color <span class="math">1</span>, <span class="math">b_2</span> marbles of color <span class="math">2</span>, ..., <span class="math">b_n</span> marbles of color <span class="math">n</span>. All <span class="math">a_i</span> and <span class="math">b_i</span> are between <span class="math">1</span> and <span class="math">10^9</span>.</p><p>After some discussion, Alice and Bob came up with the following game: players take turns, starting with Alice. On their turn, a player chooses a color <span class="math">i</span> such that <span class="tex-font-style-bf">both</span> players have at least one marble of that color. The player then discards <span class="tex-font-style-it">one marble</span> of color <span class="math">i</span>, and their opponent discards <span class="tex-font-style-it">all marbles</span> of color <span class="math">i</span>. The game ends when there is no color <span class="math">i</span> such that both players have at least one marble of that color.</p><p>The score in the game is the difference between the number of remaining marbles that Alice has and the number of remaining marbles that Bob has at the end of the game. In other words, the score in the game is equal to <span class="math">(A-B)</span>, where <span class="math">A</span> is the number of marbles Alice has and <span class="math">B</span> is the number of marbles Bob has at the end of the game. Alice wants to maximize the score, while Bob wants to minimize it.</p><p>Calculate the score at the end of the game if both players play optimally.</p></div>
+
+<h2>输入</h2>
+<div class="body"><p>The first line contains a single integer <span class="math">t</span> (<span class="math">1 \le t \le 10^4</span>) — the number of test cases.</p><p>Each test case consists of three lines:</p><ul> <li> the first line contains a single integer <span class="math">n</span> (<span class="math">2 \le n \le 2 \cdot 10^5</span>) — the number of colors; </li><li> the second line contains <span class="math">n</span> integers <span class="math">a_1, a_2, \dots, a_n</span> (<span class="math">1 \le a_i \le 10^9</span>), where <span class="math">a_i</span> is the number of marbles of the <span class="math">i</span>-th color that Alice has; </li><li> the third line contains <span class="math">n</span> integers <span class="math">b_1, b_2, \dots, b_n</span> (<span class="math">1 \le b_i \le 10^9</span>), where <span class="math">b_i</span> is the number of marbles of the <span class="math">i</span>-th color that Bob has. </li></ul><p>Additional constraint on the input: the sum of <span class="math">n</span> for all test cases does not exceed <span class="math">2 \cdot 10^5</span>.</p></div>
+
+<h2>输出</h2>
+<div class="body"><p>For each test case, output a single integer — the score at the end of the game if both Alice and Bob act optimally.</p></div>
+
+<h2>样例</h2>
+<div class="sample">
+  <div class="sample-head"><span>样例</span><span class="id">1914E2</span></div>
+  <div class="sample-body">
+    <div class="sample-col"><h4>输入 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>5
+3
+4 2 1
+1 2 4
+4
+1 20 1 20
+100 15 10 20
+5
+1000000000 1000000000 1000000000 1000000000 1000000000
+1 1 1 1 1
+3
+5 6 5
+2 1 7
+6
+3 2 4 2 5 5
+9 4 7 9 2 5</pre></div>
+    <div class="sample-col"><h4>输出 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>1
+-9
+2999999997
+8
+-6</pre></div>
+  </div>
+</div>
+<h2>提示</h2>
+<div class="body"><p>In the first example, one way to achieve a score of <span class="math">1</span> is as follows: </p><ol> <li> Alice chooses color <span class="math">1</span>, discards <span class="math">1</span> marble. Bob also discards <span class="math">1</span> marble; </li><li> Bob chooses color <span class="math">3</span>, discards <span class="math">1</span> marble. Alice also discards <span class="math">1</span> marble; </li><li> Alice chooses color <span class="math">2</span>, discards <span class="math">1</span> marble, and Bob discards <span class="math">2</span> marble. </li></ol><p>As a result, Alice has <span class="math">a = [3, 1, 0]</span> remaining, and Bob has <span class="math">b = [0, 0, 3]</span> remaining. The score is <span class="math">3 + 1 - 3 = 1</span>.</p><p>It can be shown that neither Alice nor Bob can achieve a better score if both play optimally.</p><p>In the second example, Alice can first choose color <span class="math">1</span>, then Bob will choose color <span class="math">4</span>, after which Alice will choose color <span class="math">2</span>, and Bob will choose color <span class="math">3</span>. It can be shown that this is the optimal game.</p></div>
+
+
+  <div class="foot">
+    离线快照 · 抓取于 2026-10-19 23:14 · 原题地址
+    <a href="https://codeforces.com/problemset/problem/1914/E2" target="_blank" rel="noopener">https://codeforces.com/problemset/problem/1914/E2</a><br>
+    题目版权归 Codeforces 及原作者所有，此文件仅供个人离线阅读。
+  </div>
+</div>
+<script>
+function copyPre(btn){
+  var pre = btn.closest('.sample-col').querySelector('pre');
+  var t = pre.innerText;
+  var done = function(){ btn.textContent = '已复制'; setTimeout(function(){ btn.textContent='复制'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, function(){ fallback(t, done); });
+  } else { fallback(t, done); }
+}
+function fallback(t, cb){
+  var ta = document.createElement('textarea');
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){ alert('复制失败，请手动选中'); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

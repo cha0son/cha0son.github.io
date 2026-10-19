@@ -1,0 +1,56 @@
+[
+  {
+    "cid": 1858,
+    "idx": "B",
+    "title": "B. The Walkway",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 4,
+    "idx": "A",
+    "title": "A. Watermelon",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1528,
+    "idx": "A",
+    "title": "A. Parsa's Humongous Tree",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1,
+    "idx": "A",
+    "title": "A. Theatre Square",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1336,
+    "idx": "A",
+    "title": "A. Linova and Kingdom",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1407,
+    "idx": "C",
+    "title": "C. Chocolate Bunny",
+    "timeLimit": "time limit per test1 second"
+  },
+  {
+    "cid": 1615,
+    "idx": "C",
+    "title": "C. Menorah",
+    "timeLimit": "time limit per test2 seconds"
+  },
+  {
+    "cid": 1914,
+    "idx": "E2",
+    "title": "E2. Game with Marbles (Hard Version)",
+    "timeLimit": "time limit per test3.5 seconds"
+  },
+  {
+    "cid": 1919,
+    "idx": "D",
+    "title": "D. 01 Tree",
+    "timeLimit": "time limit per test1 second"
+  }
+]

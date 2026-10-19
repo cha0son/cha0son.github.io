@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>1858B · B. The Walkway</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1c2430; --line:#2a3441;
+  --tx:#e6edf3; --mut:#9aa7b8; --dim:#6b7787; --acc:#4d9fff; --ok:#3fb950;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#fbfcfd; --panel:#fff; --panel2:#f2f5f8; --line:#dde4ec;
+         --tx:#1a2029; --mut:#5a6775; --dim:#8b97a6; --acc:#0969da; --ok:#1a7f37; }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--tx);
+  font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+       "Microsoft YaHei",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:820px; margin:0 auto; padding:28px 22px 90px}
+a{color:var(--acc); text-decoration:none}
+a:hover{text-decoration:underline}
+
+.top{margin-bottom:22px}
+.crumb{font-size:13px; color:var(--dim); margin-bottom:8px}
+h1{font-size:26px; line-height:1.35; margin:0 0 14px; letter-spacing:-.3px}
+.meta{display:flex; gap:8px; flex-wrap:wrap; font-size:12.5px}
+.meta span{background:var(--panel2); border:1px solid var(--line); color:var(--mut);
+           padding:3px 10px; border-radius:99px}
+
+h2{font-size:13px; text-transform:uppercase; letter-spacing:1.1px; color:var(--dim);
+   margin:34px 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line)}
+
+.body p{margin:0 0 14px}
+.body ul,.body ol{margin:0 0 14px; padding-left:24px}
+.body li{margin:5px 0}
+.body img{max-width:100%}
+.body center{display:block; text-align:center; margin:16px 0}
+.body .tex-graphics{max-width:100%}
+.body .section-title{display:none}
+
+.math{font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+      font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.09);
+      padding:1px 5px; border-radius:4px; white-space:pre-wrap}
+.math-block{display:block; font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+            font-size:.92em; color:#8fd0ff; background:rgba(77,159,255,.07);
+            border-left:2px solid rgba(77,159,255,.45);
+            padding:9px 13px; border-radius:0 6px 6px 0; margin:12px 0;
+            overflow-x:auto; white-space:pre-wrap}
+@media (prefers-color-scheme: light){
+  .math{color:#0550ae; background:rgba(9,105,218,.08)}
+  .math-block{color:#0550ae; background:rgba(9,105,218,.06); border-left-color:rgba(9,105,218,.4)}
+}
+
+.sample{margin:16px 0 22px; border:1px solid var(--line); border-radius:10px;
+        overflow:hidden; background:var(--panel)}
+.sample-head{display:flex; align-items:center; justify-content:space-between;
+             padding:8px 12px; background:var(--panel2); border-bottom:1px solid var(--line);
+             font-size:12px; color:var(--mut)}
+.sample-body{display:grid; grid-template-columns:1fr 1fr}
+@media (max-width:720px){ .sample-body{grid-template-columns:1fr} }
+.sample-col{padding:12px 14px; min-width:0}
+.sample-col + .sample-col{border-left:1px solid var(--line)}
+@media (max-width:720px){ .sample-col + .sample-col{border-left:none; border-top:1px solid var(--line)} }
+.sample-col h4{margin:0 0 8px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim)}
+pre{margin:0; font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+    font-size:13px; line-height:1.55; white-space:pre; overflow-x:auto; color:var(--tx)}
+button.copy{background:var(--panel); border:1px solid var(--line); color:var(--mut);
+            font-size:11px; padding:3px 10px; border-radius:6px; cursor:pointer}
+button.copy:hover{border-color:var(--acc); color:var(--acc)}
+
+.idx{list-style:none; padding:0; margin:0}
+.idx li{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+        margin-bottom:9px; padding:13px 16px; display:flex; justify-content:space-between;
+        align-items:center; gap:14px}
+.idx li:hover{border-color:var(--acc)}
+.idx .t{font-weight:600}
+.idx .id{font-family:ui-monospace,monospace; font-size:12px; color:var(--dim)}
+
+.foot{margin-top:44px; padding-top:18px; border-top:1px solid var(--line);
+      font-size:12px; color:var(--dim); line-height:1.9}
+
+@media print{
+  body{background:#fff; color:#000}
+  .sample,.math-block{break-inside:avoid}
+  button.copy,.foot{display:none}
+  h2{margin-top:20px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="crumb"><a href="https://codeforces.com/problemset/problem/1858/B" target="_blank" rel="noopener">Codeforces 1858B</a>
+      &nbsp;·&nbsp; <a href="index.html">← 返回列表</a></div>
+    <h1>B. The Walkway</h1>
+    <div class="meta"><span>time limit per test1 second</span><span>memory limit per test256 megabytes</span><span>inputstandard input</span><span>outputstandard output</span></div>
+  </div>
+
+  <h2>题目描述</h2>
+<div class="body"><p>There are <span class="math">n</span> benches near the Main Walkway in Summer Infomatics School. These benches are numbered by integers from <span class="math">1</span> to <span class="math">n</span> in order they follow. Also there are <span class="math">m</span> cookie sellers near the Walkway. The <span class="math">i</span>-th (<span class="math">1 \le i \le m</span>) cookie sellers is located near the <span class="math">s_i</span>-th bench.</p><p>Petya is standing in the beginning of the Walkway. He will pass near all benches starting from the <span class="math">1</span>-st bench and ending with the <span class="math">n</span>-th bench. Petya passes the distance between two consecutive benches in <span class="math">1</span> minute. He has a knapsack with an infinite amount of cookies. Petya is going to eat cookies from his knapsack and buy them from cookie sellers during the walk.</p><p>Petya eats cookies only near the benches according to the following rule: he will eat the cookie near the <span class="math">i</span>-th (<span class="math">1 \le i \le n</span>) bench if and only if <span class="tex-font-style-bf">at least one</span> of the following conditions holds:</p><ul> <li> There is a cookie seller near the <span class="math">i</span>-th bench. Then Petya will buy a cookie from cookie seller and eat it immediately. </li><li> Petya has not yet eaten a cookie. Then Petya will take a cookie from his knapsack and eat it immediately. </li><li> At least <span class="math">d</span> minutes passed since Petya ate the previous cookie. In other words, Petya has not eaten a cookie near the benches <span class="math">i-1, i-2, \ldots, \max(i-d+1, 1)</span>. Then Petya will take a cookie from his knapsack and eat it immediately. </li></ul><p>You may assume that Petya eats cookies instantly. Petya will not eat two or more cookies near the same bench.</p><p>You want to <span class="tex-font-style-bf">minimize</span> the number of cookies Petya will eat during his walk. In order to do this, you will ask the administration of the Summer Informatics School to remove <span class="tex-font-style-bf">exactly one</span> cookie seller from the Walkway before Petya starts his walk.</p><p>Please determine the minimum possible number of cookies Petya can eat after removing exactly one cookie seller. Also determine the number of cookie sellers, such that if you remove one of them, Petya will eat the minimum possible number of cookies.</p></div>
+
+<h2>输入</h2>
+<div class="body"><p>The first line contains a single integer <span class="math">t</span> (<span class="math">1 \le t \le 10^3</span>) — the number of test cases.</p><p>The first line of each test case contains three integers <span class="math">n</span>, <span class="math">m</span> and <span class="math">d</span> (<span class="math">2 \le d \le n \le 10^9</span>, <span class="math">2 \le m \le \min(10^{5}, n)</span>) — the number of benches, the number of cookie sellers and the value of parameter <span class="math">d</span> from the statement, respectively.</p><p>The second line of each test case contains <span class="math">m</span> integers <span class="math">s_1, s_2, \ldots, s_m</span> (<span class="math">1 \le s_i \le n</span>) — the locations of the cookie sellers. It is guaranteed that <span class="math">s_{i}  \lt  s_{i+1}</span> for all <span class="math">1 \leq i \leq m - 1</span>.</p><p>It is guaranteed that the sum of <span class="math">m</span> over all test cases does not exceed <span class="math">10^5</span>.</p></div>
+
+<h2>输出</h2>
+<div class="body"><p>For each test case print two integers — the minimum number of cookies that Petya can eat if exactly one cookie seller is removed, and the number of cookie sellers such that if one of them is removed, Petya will eat the minimum possible number of cookies.</p></div>
+
+<h2>样例</h2>
+<div class="sample">
+  <div class="sample-head"><span>样例</span><span class="id">1858B</span></div>
+  <div class="sample-body">
+    <div class="sample-col"><h4>输入 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>8
+6 2 2
+2 5
+8 3 2
+3 5 8
+10 4 9
+2 8 9 10
+30 5 8
+6 8 15 24 29
+30 5 8
+6 8 12 20 27
+8 8 3
+1 2 3 4 5 6 7 8
+2 2 2
+1 2
+1000000000 3 20000000
+57008429 66778899 837653445</pre></div>
+    <div class="sample-col"><h4>输出 <button class="copy" onclick="copyPre(this)">复制</button></h4>
+      <pre>3 1
+4 1
+4 4
+6 4
+5 2
+7 7
+1 1
+51 1</pre></div>
+  </div>
+</div>
+<h2>提示</h2>
+<div class="body"><p>In the first test case <span class="math">n=6</span>, <span class="math">m=2</span>, <span class="math">d=2</span> and <span class="math">s=[2, 5]</span>. If no cookie seller is removed, then Petya will eat <span class="math">4</span> cookies during his walk (note that you have to remove exactly one cookie seller; this case is explained only to show how Petya decides whether to eat a cookie): </p><ul> <li> Petya will eat a cookie near the <span class="math">1</span>-st bench since he has not yet eaten a cookie. </li><li> Petya will eat a cookie near the <span class="math">2</span>-nd bench since there is a cookie seller near this bench. </li><li> Petya will not eat a cookie near the <span class="math">3</span>-rd bench since only <span class="math">1 \lt d</span> minute passed since he ate a cookie. </li><li> Petya will eat a cookie near the <span class="math">4</span>-th bench since <span class="math">2\ge d</span> minutes passed since he ate a cookie. </li><li> Petya will eat a cookie near the <span class="math">5</span>-th bench since there is a cookie seller near this bench. </li><li> Petya will not eat a cookie near the <span class="math">6</span>-th bench since only <span class="math">1 \lt d</span> minute passed since he ate a cookie. </li></ul><p>If the <span class="math">1</span>-st cookie seller is removed, Petya will eat <span class="math">3</span> cookies (near the benches <span class="math">1</span>, <span class="math">3</span> and <span class="math">5</span>). If the <span class="math">2</span>-nd cookie seller is removed, Petya will eat <span class="math">4</span> cookies (near the benches <span class="math">1</span>, <span class="math">2</span>, <span class="math">4</span> and <span class="math">6</span>).</p><p>Thus, the minimum number of cookies Petya will eat is <span class="math">3</span>; there is only one cookie seller such that removing it results in minimizing the number of cookies Petya will eat.</p><p>In the second test case </p><ul> <li> the removal of the <span class="math">1</span>-st or the <span class="math">2</span>-nd cookie seller results in Petya eating <span class="math">5</span> cookies near the benches <span class="math">1</span>, <span class="math">3</span>, <span class="math">5</span>, <span class="math">7</span>, <span class="math">8</span>; </li><li> the removal of the <span class="math">3</span>-rd cookie seller results in Petya eating <span class="math">4</span> cookies near the benches <span class="math">1</span>, <span class="math">3</span>, <span class="math">5</span>, <span class="math">7</span>. </li></ul><p>Note that the second integer you should output is the <span class="tex-font-style-bf">number of (that is, amount)</span> cookie sellers, not the index of a cookie seller to remove. Thus, the answer to the second test case is <span class="tex-font-style-tt">4 1</span> because there is only <span class="tex-font-style-bf">one</span> cookie seller such that removing it results in Petya eating four cookies, which is the minimum possible.</p><p>In the third test case Petya will eat <span class="math">4</span> cookies no matter what cookie seller is removed.</p><p>Note that Petya is not interested in minimizing the number of cookies he will eat, so he eats cookies whenever it is possible under the rule from the statement.</p></div>
+
+
+  <div class="foot">
+    离线快照 · 抓取于 2026-10-19 23:14 · 原题地址
+    <a href="https://codeforces.com/problemset/problem/1858/B" target="_blank" rel="noopener">https://codeforces.com/problemset/problem/1858/B</a><br>
+    题目版权归 Codeforces 及原作者所有，此文件仅供个人离线阅读。
+  </div>
+</div>
+<script>
+function copyPre(btn){
+  var pre = btn.closest('.sample-col').querySelector('pre');
+  var t = pre.innerText;
+  var done = function(){ btn.textContent = '已复制'; setTimeout(function(){ btn.textContent='复制'; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done, function(){ fallback(t, done); });
+  } else { fallback(t, done); }
+}
+function fallback(t, cb){
+  var ta = document.createElement('textarea');
+  ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e){ alert('复制失败，请手动选中'); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
