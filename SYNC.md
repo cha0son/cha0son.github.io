@@ -72,8 +72,21 @@ score = 0.55 × 难度契合(高斯, σ=110) + 0.25 × 热度(log 通过数) + 0
 | `index.v1.html` | 旧版个人主页简历，保留可访问 |
 | `index.backup.html` | 更早的一版备份 |
 | `data/problems.json` | 题库快照（schema v3，无标签） |
+| `reader/` | 离线题面页，由 `cf-reader` 生成后推进来 |
+| `reader/manifest.json` | 哪些题有离线页；主页据此决定卡片点进去是站内还是 CF |
 | `food-recommender/` | 之前的食物推荐 demo |
 | `DEPLOY.md` | GitHub Pages 部署教程 |
+
+## 卡片点进去是站内阅读还是 CF？
+
+主页启动时读 `reader/manifest.json`：
+
+- 题号在清单里 → 卡片有绿色「离线」标记，点进去是 `reader/1858B.html`，
+  同时保留一个 `CF ↗` 小链接用于去原站提交
+- 不在清单里 → 直接跳 `codeforces.com`
+
+所以加题流程是：在 `cf-reader/` 里跑 `发布到主页.bat`，它会把新页面和
+`manifest.json` 一起推到本仓库。**不要手动改 `manifest.json`**，它由生成器写。
 
 ## 相关工具：cf-reader
 

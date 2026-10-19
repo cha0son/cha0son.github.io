@@ -182,6 +182,17 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
   .card:hover h3{color:#bfdbfe}
+  /* 整卡可点：用一张透明链接铺满整张卡，CF 直达链接浮在它上面 */
+  .card .hit{position:absolute; inset:0; z-index:1; border-radius:13px}
+  .card .cf{
+    position:relative; z-index:2; font-size:11.5px; color:#5b8dd6;
+    padding:0 3px; border-radius:4px; transition:.14s;
+  }
+  .card .cf:hover{color:#9ec5ff; background:rgba(59,130,246,.14)}
+  .badge-local{
+    font-size:10.5px; padding:1px 7px; border-radius:5px; font-weight:600;
+    background:rgba(34,197,94,.14); color:#4ade80; border:1px solid rgba(34,197,94,.35);
+  }
   .why{
     font-size:11.5px; line-height:1.5; color:#8290a4;
     padding-top:9px; border-top:1px dashed #232830; margin-top:auto;
@@ -349,6 +360,7 @@ function fmt(n){ return Number(n).toLocaleString("en-US"); }
 /* ---------------- 状态 ---------------- */
 var state = {
   payload: null,
+  readerSet: new Set(),
   problems: [],
   maxSolved: 1,
   minCid: 1,
@@ -411,8 +423,21 @@ function decode(payload){
 }
 
 /* ---------------- 数据加载 ---------------- */
+// 读 reader/manifest.json：哪些题已经生成过离线阅读页
+async function loadManifest(){
+  try {
+    var r = await fetch("reader/manifest.json", {cache: "no-cache"});
+    if (!r.ok) return;
+    var j = await r.json();
+    state.readerSet = new Set(j.ids || []);
+  } catch(e){
+    state.readerSet = new Set();
+  }
+}
+
 async function boot(){
   skeleton(8);
+  await loadManifest();
   var cached = null;
   try {
     var raw = localStorage.getItem(LS_KEY);
@@ -586,20 +611,29 @@ function render(){
 
   slice.forEach(function(item){
     var p = item.p;
+    var tag = p.cid + p.idx;
+    var hasLocal = state.readerSet.has(tag);
+    var cfUrl = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
+    // 有离线页就进站内阅读器，没有就回退到 CF
+    var mainHref = hasLocal ? ("reader/" + tag + ".html") : cfUrl;
+    var mainAttrs = hasLocal ? "" : ' target="_blank" rel="noopener"';
 
-    var a = document.createElement("a");
-    a.className = "card";
-    a.href = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.style.setProperty("--c", rankColor(p.rating));
-    a.innerHTML =
+    var el = document.createElement("div");
+    el.className = "card";
+    el.style.setProperty("--c", rankColor(p.rating));
+    el.innerHTML =
+      '<a class="hit" href="' + mainHref + '"' + mainAttrs +
+        ' aria-label="' + esc(tag) + " " + esc(p.name) + '"></a>' +
       '<div class="card-top"><span class="badge">' + p.rating + "</span>" +
+      (hasLocal ? '<span class="badge-local">离线</span>' : "") +
       '<span class="cidx">' + p.cid + esc(p.idx) + "</span></div>" +
       "<h3>" + esc(p.name) + "</h3>" +
       '<div class="why">' + esc(reasons(p, ctx)) + "</div>" +
-      '<div class="foot"><span>' + fmt(p.solved) + ' 人通过</span><span class="go">去 CF 打开 →</span></div>';
-    frag.appendChild(a);
+      '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
+      '<span class="go">' + (hasLocal ? "站内阅读 →" : "去 CF 打开 →") + "</span>" +
+      (hasLocal ? '<a class="cf" href="' + cfUrl + '" target="_blank" rel="noopener" title="在 Codeforces 打开（提交用）">CF ↗</a>' : "") +
+      "</div>";
+    frag.appendChild(el);
   });
   grid.appendChild(frag);
 
@@ -637,21 +671,27 @@ function daily(){
 
   var grid = $("grid");
   grid.innerHTML = "";
-  var a = document.createElement("a");
-  a.className = "card";
-  a.href = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.style.setProperty("--c", rankColor(p.rating));
-  a.style.gridColumn = "1/-1";
-  a.style.padding = "30px";
-  a.innerHTML =
+  var dtag = p.cid + p.idx;
+  var dLocal = state.readerSet.has(dtag);
+  var dCf = "https://codeforces.com/problemset/problem/" + p.cid + "/" + p.idx;
+  var el = document.createElement("div");
+  el.className = "card";
+  el.style.setProperty("--c", rankColor(p.rating));
+  el.style.gridColumn = "1/-1";
+  el.style.padding = "30px";
+  el.innerHTML =
+    '<a class="hit" href="' + (dLocal ? "reader/" + dtag + ".html" : dCf) + '"' +
+      (dLocal ? "" : ' target="_blank" rel="noopener"') +
+      ' aria-label="' + esc(dtag) + " " + esc(p.name) + '"></a>' +
     '<div class="card-top"><span class="badge" style="font-size:14px;padding:4px 11px">' + p.rating + "</span>" +
     '<span class="cidx">' + p.cid + esc(p.idx) + " · 今日一题</span></div>" +
     '<h3 style="font-size:23px;-webkit-line-clamp:3">' + esc(p.name) + "</h3>" +
     '<div class="why" style="font-size:13px">' + esc(reasons(p, makeCtx(0.5))) + "</div>" +
-    '<div class="foot"><span>' + fmt(p.solved) + ' 人通过</span><span class="go" style="opacity:1">去 CF 打开 →</span></div>';
-  grid.appendChild(a);
+    '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
+    '<span class="go" style="opacity:1">' + (dLocal ? "站内阅读 →" : "去 CF 打开 →") + "</span>" +
+    (dLocal ? '<a class="cf" href="' + dCf + '" target="_blank" rel="noopener">CF ↗</a>' : "") +
+    "</div>";
+  grid.appendChild(el);
 
   var b = $("banner");
   b.className = "banner show";

@@ -42,7 +42,8 @@ function makeEl(tag) {
   return el;
 }
 
-function run(hash) {
+function run(hash, opts) {
+  opts = opts || {};
   const ids = [...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]);
   const nodes = {};
   for (const id of ids) nodes[id] = makeEl("div");
@@ -70,7 +71,14 @@ function run(hash) {
       setItem: (k, v) => store.set(k, String(v)),
       removeItem: k => store.delete(k),
     },
-    fetch: async () => ({ ok: true, json: async () => JSON.parse(dataRaw) }),
+    fetch: async (url) => {
+      // 区分题库和离线页清单两个请求
+      if (String(url).indexOf("manifest.json") >= 0) {
+        if (!opts.manifest) return { ok: false, json: async () => ({}) };
+        return { ok: true, json: async () => ({ gen: 1, ids: opts.manifest }) };
+      }
+      return { ok: true, json: async () => JSON.parse(dataRaw) };
+    },
     requestAnimationFrame: fn => setTimeout(fn, 0),
     history: { replaceState() {} },
     location: { hash: hash || "" },
@@ -114,6 +122,33 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   await sleep(400);
   results.push(["最高难度档不崩", c.errors.length === 0, c.errors.join(" | ")]);
   results.push(["最高难度档有结果", c.nodes.grid.children.length > 0, `实际 ${c.nodes.grid.children.length}`]);
+
+  // 场景 D: 没有离线页清单 → 所有卡片回退到 codeforces.com
+  const d = run("", {});
+  await sleep(400);
+  const dCards = d.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
+  results.push(["无清单时卡片数量正常", dCards.length > 0, `实际 ${dCards.length}`]);
+  results.push(["无清单时全部回退 CF",
+                dCards.every(x => x._html.includes("codeforces.com") && !x._html.includes("reader/")),
+                `异常 ${dCards.filter(x => x._html.includes("reader/")).length} 张`]);
+  results.push(["无清单时没有「离线」标记",
+                dCards.every(x => !x._html.includes("badge-local")), ""]);
+
+  // 场景 E: 清单包含全部题目 → 所有卡片进站内阅读
+  const allIds = JSON.parse(dataRaw).p.map(r => r[0] + r[1]);
+  const e = run("", { manifest: allIds });
+  await sleep(400);
+  const eCards = e.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
+  results.push(["有清单时卡片数量正常", eCards.length > 0, `实际 ${eCards.length}`]);
+  results.push(["有清单时全部指向站内 reader/",
+                eCards.every(x => x._html.includes('href="reader/')),
+                `异常 ${eCards.filter(x => !x._html.includes('href="reader/')).length} 张`]);
+  results.push(["有清单时都带「离线」标记",
+                eCards.every(x => x._html.includes("badge-local")), ""]);
+  results.push(["有清单时仍保留 CF 直达链接",
+                eCards.every(x => x._html.includes("codeforces.com") && x._html.includes('class="cf"')), ""]);
+  results.push(["卡片外层不再是 <a>（避免嵌套链接）",
+                eCards.every(x => x.tagName !== "a"), `实际 ${eCards[0] && eCards[0].tagName}`]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;
