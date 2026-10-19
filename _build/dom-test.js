@@ -151,8 +151,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   const dCards = d.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
   results.push(["无清单时卡片数量正常", dCards.length > 0, `实际 ${dCards.length}`]);
   results.push(["卡片链接指向站内读题页",
-                dCards.every(x => x._html.includes("cf-live.vercel.app/?id=")),
-                `异常 ${dCards.filter(x => !x._html.includes("cf-live.vercel.app/?id=")).length} 张`]);
+                dCards.every(x => x._html.includes("cf-live-eight.vercel.app/?id=")),
+                `异常 ${dCards.filter(x => !x._html.includes("cf-live-eight.vercel.app/?id=")).length} 张`]);
   results.push(["每张卡都留了 CF 直达链接",
                 dCards.every(x => x._html.includes("codeforces.com/problemset/problem/")), ""]);
   results.push(["卡片外层不是 <a>（避免嵌套链接）",
@@ -203,9 +203,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   const fc = f.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
   fc.querySelector(".hit").fire("click", { preventDefault() {} });
   await sleep(300);
-  results.push(["接口失败时弹窗不白屏", f.nodes.mBody._html.includes("没拿到"), ""]);
-  results.push(["接口失败时给出去 CF 的兜底",
-                f.nodes.mBody._html.includes("codeforces.com"), ""]);
+  results.push(["接口失败时弹窗不白屏", f.nodes.mBody._html.includes("没取到题面"), ""]);
+  results.push(["接口失败时改为嵌入洛谷 iframe",
+                f.nodes.mBody._html.includes("<iframe") &&
+                f.nodes.mBody._html.includes("luogu.com.cn/problem/"), ""]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;

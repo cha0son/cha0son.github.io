@@ -1008,18 +1008,33 @@ function openReader(tag){
 
 function renderFallback(tag, e){
   var cf = cfUrlOf(tag);
+  var cid = tag.match(/^(\d+)/)[1];
+  var pid = "CF" + cid + tag.slice(cid.length);
+  var luoguUrl = "https://www.luogu.com.cn/problem/" + pid;
   var msg = (e && e.name === "AbortError")
-    ? "在线接口超时（10 秒）"
+    ? "在线接口超时"
     : String((e && e.message) || e);
-  var local = state.readerSet.has(tag)
-    ? '<a class="primary" href="reader/' + tag + '.html" style="display:inline-block;margin-right:8px">读本地缓存页</a>'
-    : "";
-  $("mTitle").textContent = tag + " · 没读到";
+
+  // 洛谷允许被 iframe 嵌入（无 X-Frame-Options、无 CSP、无 frame-busting），
+  // 所以接口不可用时直接嵌进来，用访客自己的 IP 加载，绕开后端出口被拦的问题。
+  $("mTitle").textContent = tag + " · 洛谷题面";
+  $("mCf").href = cf;
+  $("mLang").style.display = "none";
   $("mBody").innerHTML =
-    '<div class="empty"><h4>在线题面没拿到</h4>' +
-    "<p>" + esc(msg) + "<br>可能是网络访问不了 cf-live 的接口（vercel.app 在国内时常被墙）。</p>" +
-    '<p style="margin-top:18px">' + local +
-    '<a class="primary" href="' + cf + '" target="_blank" rel="noopener" style="display:inline-block">去 Codeforces 读</a></p></div>';
+    '<div style="font-size:12.5px;color:var(--muted);background:rgba(255,180,60,.08);' +
+    'border:1px solid rgba(255,180,60,.3);border-radius:9px;padding:9px 13px;margin-bottom:12px">' +
+    "站内接口没取到题面（" + esc(msg) + "），已改为直接嵌入洛谷页面，内容一样是全的。" +
+    "</div>" +
+    '<iframe src="' + esc(luoguUrl) + '" referrerpolicy="no-referrer" ' +
+    'style="width:100%;height:min(72vh,720px);min-height:420px;border:1px solid var(--border);' +
+    'border-radius:10px;background:#fff"></iframe>' +
+    '<div style="margin-top:12px;font-size:12px;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap">' +
+    '<a href="' + esc(luoguUrl) + '" target="_blank" rel="noopener">在新标签打开洛谷</a>' +
+    '<a href="' + cf + '" target="_blank" rel="noopener">Codeforces 提交</a>' +
+    (state.readerSet.has(tag)
+      ? '<a href="reader/' + tag + '.html">读本地缓存页</a>' : "") +
+    "</div>";
+  $("modal").querySelector(".modal-box").scrollTop = 0;
 }
 
 function renderLive(lang){
