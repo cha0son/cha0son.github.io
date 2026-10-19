@@ -988,7 +988,8 @@ function openReader(tag){
   $("modal").className = "modal show";
 
   var ctrl = new AbortController();
-  var timer = setTimeout(function(){ ctrl.abort(); }, 10000);
+  // 4.5 秒拿不到就走 iframe 兜底，别让人对着骨架屏干等
+  var timer = setTimeout(function(){ ctrl.abort(); }, 4500);
 
   fetch(LIVE_BASE + "/api/problem?id=" + encodeURIComponent(tag), { signal: ctrl.signal })
     .then(function(r){
