@@ -1,0 +1,7 @@
+# 抓取产物（体积大，可随时重新生成）
+_build/problemset.json
+_build/_extracted.js
+
+# 系统垃圾
+.DS_Store
+Thumbs.db

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chaoson · 个人主页</title>
+<meta name="description" content="吉林大学软件工程本科生 · Java 后端方向 · 算法竞赛选手">
+<meta name="theme-color" content="#0f1115">
+
+<!-- 分享到微信/QQ 时的卡片信息 -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="chaoson · 个人主页">
+<meta property="og:description" content="吉林大学软件工程本科生 · Java 后端方向 · CCPC 银牌 / ICPC 铜牌">
+<meta property="og:url" content="https://cha0son.github.io/">
+<meta name="twitter:card" content="summary">
+
+<!-- 用内联 SVG 做图标，省一个文件、无需额外请求 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f1115'/%3E%3Ctext x='32' y='44' font-size='36' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%234d9fff'%3Ec%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#161a21; --panel2:#1c222b; --line:#252c37;
+    --text:#e8edf5; --muted:#8b98ab; --accent:#4d9fff; --accent2:#6ee7b7;
+    --warn:#ffb84d;
+    --maxw:980px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif;
+    line-height:1.75;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+  /* ---------- 顶部导航 ---------- */
+  header{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(15,17,21,.82);border-bottom:1px solid var(--line);
+  }
+  header .wrap{display:flex;align-items:center;gap:20px;height:56px}
+  .logo{font-weight:700;letter-spacing:.5px;font-size:15px}
+  .logo span{color:var(--accent)}
+  nav{margin-left:auto;display:flex;gap:20px;font-size:14px}
+  nav a{color:var(--muted)}
+  nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:640px){nav{display:none}}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:78px 0 58px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 400px at 12% -20%,rgba(77,159,255,.13),transparent 65%)}
+  .hero h1{font-size:44px;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+  .hero .tag{font-size:17px;color:var(--muted);margin-bottom:22px}
+  .hero .tag b{color:var(--accent2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+  .chip{
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    font-size:13px;padding:5px 13px;border-radius:999px;
+  }
+  .chip.hi{border-color:rgba(77,159,255,.4);color:var(--accent);background:rgba(77,159,255,.08)}
+  .links{display:flex;flex-wrap:wrap;gap:11px}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--accent);color:#07131f;font-weight:600;font-size:14px;
+    padding:10px 21px;border-radius:9px;transition:.18s;
+  }
+  .btn:hover{transform:translateY(-2px);text-decoration:none;filter:brightness(1.08)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---------- 通用区块 ---------- */
+  section{padding:54px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:21px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  h2:before{content:"";width:3px;height:19px;background:var(--accent);border-radius:2px}
+  .lead{color:var(--muted);font-size:14.5px;margin-bottom:26px}
+
+  /* ---------- 技能 ---------- */
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px}
+  .sk{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:19px}
+  .sk h3{font-size:15px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .sk .lvl{font-size:11px;color:var(--accent);background:rgba(77,159,255,.1);
+    padding:2px 8px;border-radius:5px;font-weight:500}
+  .sk p{font-size:13.5px;color:var(--muted);margin-top:9px;line-height:1.85}
+  .sk .k{color:var(--text)}
+
+  /* ---------- 项目 ---------- */
+  .proj{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px;margin-bottom:16px;transition:.2s}
+  .proj:hover{border-color:rgba(77,159,255,.35)}
+  .proj h3{font-size:18px;margin-bottom:7px}
+  .proj .meta{font-size:12.5px;color:var(--muted);margin-bottom:13px}
+  .proj p{font-size:14px;color:#c3ccda;margin-bottom:15px}
+  .proj ul{list-style:none;font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .proj ul li{padding-left:17px;position:relative;margin-bottom:6px;line-height:1.8}
+  .proj ul li:before{content:"▹";position:absolute;left:0;color:var(--accent)}
+  .proj ul li b{color:var(--text);font-weight:600}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{font-size:12px;background:var(--panel2);border:1px solid var(--line);
+    color:var(--muted);padding:3px 10px;border-radius:6px}
+
+  /* ---------- 时间线 ---------- */
+  .tl{border-left:2px solid var(--line);padding-left:24px;margin-left:5px}
+  .tl .item{position:relative;padding-bottom:26px}
+  .tl .item:last-child{padding-bottom:0}
+  .tl .item:before{content:"";position:absolute;left:-31px;top:8px;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+  .tl h3{font-size:15.5px;margin-bottom:3px}
+  .tl .when{font-size:12.5px;color:var(--accent);margin-bottom:6px}
+  .tl p{font-size:13.5px;color:var(--muted)}
+
+  /* ---------- 联系 ---------- */
+  .contact{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .ct{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:16px 19px;transition:.18s;display:block}
+  .ct:hover{border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
+  .ct .k{font-size:12px;color:var(--muted);margin-bottom:3px}
+  .ct .v{font-size:14px;color:var(--text)}
+
+  footer{padding:34px 0 44px;color:var(--muted);font-size:13px;text-align:center}
+  footer .tip{margin-top:9px;font-size:12px;color:#5b6675}
+
+  /* ---------- 滚动淡入 ---------- */
+  .fade{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+  .fade.in{opacity:1;transform:none}
+  /* ============ 动态效果 ============ */
+  /* 顶部滚动进度条 */
+  #progress{
+    position:fixed;top:0;left:0;height:2px;width:0;z-index:99;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 10px rgba(77,159,255,.7);transition:width .08s linear;
+  }
+
+  /* 鼠标跟随光晕（整页氛围） */
+  #glow{
+    position:fixed;width:600px;height:600px;pointer-events:none;z-index:0;
+    border-radius:50%;opacity:.5;filter:blur(80px);
+    background:radial-gradient(circle,rgba(77,159,255,.16),transparent 62%);
+    transform:translate(-50%,-50%);
+    transition:opacity .35s ease;
+  }
+  main,header,footer,.hero{position:relative;z-index:1}
+
+  /* Hero 粒子画布 */
+  .hero{overflow:hidden}
+  #stars{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+  .hero .wrap{position:relative;z-index:2}
+
+  /* 渐变流动的主标题 */
+  .hero h1{
+    background:linear-gradient(100deg,#e8edf5 12%,var(--accent) 38%,var(--accent2) 55%,#e8edf5 82%);
+    background-size:280% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    animation:flow 9s ease-in-out infinite;
+  }
+  @keyframes flow{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+
+  /* 打字机英文副标题 */
+  .typed{
+    font-family:"SF Mono",Consolas,"Courier New",monospace;
+    font-size:15px;letter-spacing:.3px;color:var(--muted);
+    margin:-6px 0 18px;min-height:24px;
+  }
+  .typed .tw{color:var(--accent2)}
+  .typed .cur{
+    display:inline-block;width:8px;height:16px;margin-left:2px;
+    background:var(--accent);vertical-align:-2px;
+    animation:blink 1.05s steps(2,start) infinite;
+  }
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+  /* 按钮：光泽扫过 + 抬升 */
+  .btn{position:relative;overflow:hidden}
+  .btn:after{
+    content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);
+    transform:skewX(-18deg);
+  }
+  .btn:hover:after{animation:sheen .8s ease}
+  @keyframes sheen{to{left:170%}}
+
+  /* 卡片：悬停浮起 */
+  .sk,.proj{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+  .sk:hover,.proj:hover{
+    transform:translateY(-5px);
+    box-shadow:0 14px 38px -14px rgba(77,159,255,.35);
+  }
+
+  /* 技能条（进入视口时展开） */
+  .skillbar{height:4px;border-radius:3px;background:#20262f;margin-top:11px;overflow:hidden}
+  .skillbar i{
+    display:block;height:100%;width:0;border-radius:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    transition:width 1.15s cubic-bezier(.22,.8,.3,1);
+  }
+  .sk.in .skillbar i{width:var(--w)}
+
+  /* 时间线圆点脉冲 */
+  .tl .item:before{animation:pulse 2.6s ease-out infinite}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 3px var(--bg),0 0 0 4px rgba(77,159,255,.5)}
+    70%{box-shadow:0 0 0 3px var(--bg),0 0 0 12px rgba(77,159,255,0)}
+    100%{box-shadow:0 0 0 3px var(--bg),0 0 0 4px rgba(77,159,255,0)}
+  }
+
+  /* 区块淡入：错落延迟交给 JS */
+  .fade{transition-duration:.7s}
+
+  @media(prefers-reduced-motion:reduce){
+    *,*:before,*:after{animation:none!important;transition:none!important}
+  }
+
+  /* ============ 奖项徽章 ============ */
+  .awards{display:flex;flex-wrap:wrap;gap:9px;margin:-4px 0 24px}
+  .award{
+    display:inline-flex;align-items:center;gap:8px;
+    background:linear-gradient(135deg,rgba(255,184,77,.13),rgba(255,138,61,.05));
+    border:1px solid rgba(255,184,77,.32);
+    color:#ffd9a0;font-size:13px;padding:6px 14px;border-radius:9px;
+    transition:.22s;
+  }
+  .award:hover{transform:translateY(-2px);border-color:rgba(255,184,77,.6)}
+  .award i{
+    font-style:normal;font-weight:700;font-size:11.5px;
+    background:rgba(255,184,77,.9);color:#3a2600;
+    padding:1px 7px;border-radius:5px;letter-spacing:.3px;
+  }
+  .award.silver i{background:linear-gradient(135deg,#dfe7f0,#a9b7c9);color:#2a323d}
+  .award.bronze i{background:linear-gradient(135deg,#e4b083,#c88a54);color:#3a2410}
+
+  /* ============ 返回顶部 ============ */
+  #backtop{
+    position:fixed;right:26px;bottom:26px;z-index:60;
+    width:44px;height:44px;border-radius:12px;cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transform:translateY(14px) scale(.9);pointer-events:none;
+    transition:.25s;
+  }
+  #backtop.on{opacity:1;transform:none;pointer-events:auto}
+  #backtop:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px)}
+  #backtop svg{width:19px;height:19px}
+  @media(max-width:640px){#backtop{right:16px;bottom:16px;width:40px;height:40px}}
+
+  /* ============ 移动端菜单 ============ */
+  .burger{
+    display:none;margin-left:auto;background:transparent;border:1px solid var(--line);
+    color:var(--muted);width:38px;height:34px;border-radius:9px;cursor:pointer;
+    align-items:center;justify-content:center;
+  }
+  .burger:hover{color:var(--text);border-color:var(--accent)}
+  .burger svg{width:17px;height:17px}
+  @media(max-width:640px){
+    .burger{display:flex}
+    nav{
+      display:none;position:absolute;top:56px;left:0;right:0;
+      background:rgba(15,17,21,.98);border-bottom:1px solid var(--line);
+      flex-direction:column;gap:0;padding:6px 0;
+    }
+    nav.open{display:flex;animation:dropIn .22s ease}
+    nav a{padding:13px 24px;border-bottom:1px solid #1a1f27}
+    nav a:last-child{border-bottom:none}
+  }
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+  /* 锚点跳转时留出吸顶导航的高度 */
+  section{scroll-margin-top:70px}
+
+  /* ============ 项目卡片：仓库链接 ============ */
+  .proj-links{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    margin-top:16px;padding-top:15px;border-top:1px solid #20262f;
+  }
+  .repo-btn{
+    display:inline-flex;align-items:center;gap:7px;
+    background:rgba(77,159,255,.1);border:1px solid rgba(77,159,255,.32);
+    color:var(--accent);font-size:13.5px;font-weight:500;
+    padding:7px 15px;border-radius:9px;transition:.2s;
+  }
+  .repo-btn:hover{
+    background:rgba(77,159,255,.18);border-color:var(--accent);
+    text-decoration:none;transform:translateY(-1px);
+  }
+  .repo-meta{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+  .repo-meta .dot{
+    width:9px;height:9px;border-radius:50%;background:#b07219;display:inline-block;
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="glow"></div>
+
+<header>
+  <div class="wrap">
+    <div class="logo">chaoson<span>.</span></div>
+    <nav id="nav">
+      <a href="#about">关于</a>
+      <a href="#skills">技能</a>
+      <a href="#projects">项目</a>
+      <a href="#exp">经历</a>
+      <a href="#contact">联系</a>
+    </nav>
+    <button class="burger" id="burger" aria-label="菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 6h18M3 12h18M3 18h18"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ==================== Hero ==================== -->
+<div class="hero">
+  <canvas id="stars"></canvas>
+  <div class="wrap">
+    <h1>chaoson</h1>
+    <div class="tag">
+      吉林大学 · 软件工程本科生 · <b>Java 后端方向</b> · 算法竞赛选手
+    </div>
+    <div class="typed"><span id="tw"></span><span class="cur"></span></div>
+    <div class="chips">
+      <span class="chip hi">Java / Spring Boot</span>
+      <span class="chip hi">算法与数据结构</span>
+      <span class="chip">C++ / Qt</span>
+      <span class="chip">MySQL / Redis</span>
+      <span class="chip">Docker</span>
+      <span class="chip">Linux</span>
+    </div>
+    <div class="awards">
+      <span class="award silver"><i>银牌</i>2025 CCPC 东北邀请赛</span>
+      <span class="award bronze"><i>铜牌</i>2026 ICPC 沈阳邀请赛</span>
+      <span class="award"><i>国二</i>2026 蓝桥杯 C++ A 组</span>
+    </div>
+    <div class="links">
+      <a class="btn" href="#projects">看我的项目</a>
+      <a class="btn ghost" href="https://github.com/cha0son" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- ==================== 关于 ==================== -->
+  <section id="about" class="fade">
+    <h2>关于我</h2>
+    <p class="lead">一个喜欢把算法用起来的人</p>
+    <p style="font-size:14.5px;color:#c3ccda;max-width:760px">
+      吉林大学软件工程专业本科生，主攻 Java 后端开发。有算法竞赛训练经历，
+      习惯用「量化指标 + 对比实验」的方式验证方案，而不只是让代码跑起来。
+      最近在做推荐系统方向的个人项目，把兴趣衰减、加权打分这些算法真正落地成了能用的东西。
+    </p>
+  </section>
+
+  <!-- ==================== 技能 ==================== -->
+  <section id="skills" class="fade">
+    <h2>技能</h2>
+    <p class="lead">按熟练度排列</p>
+    <div class="skills">
+
+      <div class="sk">
+        <h3>Java 后端 <span class="lvl">主力</span></h3>
+        <p>
+          <span class="k">Spring Boot</span> 分层架构、RESTful 接口设计<br>
+          <span class="k">MyBatis</span> 手写 SQL、索引优化<br>
+          <span class="k">MySQL</span> 事务、索引、慢查询分析<br>
+          <span class="k">Redis</span> 缓存、分布式锁、ZSet 排行榜
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>算法与数据结构 <span class="lvl">竞赛训练</span></h3>
+        <p>
+          <span class="k">图论</span> 最短路、网络流、树上问题<br>
+          <span class="k">计算几何</span> 凸包、半平面交、旋转卡壳<br>
+          <span class="k">数据结构</span> 线段树、树状数组、平衡树<br>
+          <span class="k">字符串</span> 哈希、KMP、Z 函数
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>C++ / 桌面开发</h3>
+        <p>
+          <span class="k">C++11/17</span> STL、面向对象、模板<br>
+          <span class="k">Qt</span> 信号槽、界面开发基础<br>
+          竞赛主力语言，熟悉性能与内存考量
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>工程工具</h3>
+        <p>
+          <span class="k">Git</span> 分支管理与协作<br>
+          <span class="k">Docker</span> 容器化部署、资源隔离<br>
+          <span class="k">Linux</span> 常用命令、服务部署<br>
+          <span class="k">Maven</span> 依赖管理
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 项目 ==================== -->
+  <section id="projects" class="fade">
+    <h2>项目</h2>
+    <p class="lead">全部是个人项目，代码都在 GitHub 上</p>
+
+    <div class="proj">
+      <h3>每日饮食推荐系统</h3>
+      <div class="meta">个人项目 · Java · 2026.10</div>
+      <p>
+        一个加权打分 + 时间衰减的推荐引擎。解决的核心问题是「怎么让推荐既符合口味、
+        又不重复」。不是套壳调包，打分公式、衰减模型、评估脚本都是自己设计实现的。
+      </p>
+      <ul>
+        <li>设计打分模型 <b>score = α·偏好分 + β·时间分 + γ·场景分 − 惩罚分 + 噪声</b>，各项权重可配置</li>
+        <li>用 <b>1 − exp(−Δt/λ)</b> 建模「想念程度」回升曲线，并按菜系个性化半衰期 λ</li>
+        <li>实现<b>候选池自适应</b>：过滤条件导致候选集为空时逐级放宽，而不是直接报错</li>
+        <li>做消融实验验证时间衰减的贡献：<b>β=0.30 时两菜分差 0.091，β=0 时完全持平</b></li>
+        <li>自建 82 道菜品库，前端提供打分、历史、参数实时调节</li>
+      </ul>
+      <div class="tags">
+        <span>Java</span><span>推荐算法</span><span>时间衰减</span>
+        <span>HTTP Server</span><span>原生 JS</span>
+      </div>
+      <div class="proj-links">
+        <a class="repo-btn" href="food-recommender/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
+          </svg>
+          在线试用
+        </a>
+        <a class="repo-btn" href="https://github.com/cha0son/food-recommender" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          查看源码
+        </a>
+        <span class="repo-meta"><i class="dot"></i>Java · 约 850 行 · 零依赖</span>
+      </div>
+    </div>
+
+    </section>
+
+  <!-- ==================== 经历 ==================== -->
+  <section id="exp" class="fade">
+    <h2>经历</h2>
+    <p class="lead">时间线倒序，最近的放最上面</p>
+    <div class="tl">
+
+      <div class="item">
+        <h3>算法竞赛</h3>
+        <div class="when">2025 – 2026</div>
+        <p>
+          主攻图论与计算几何，长期使用 C++ 与 STL 实现算法。<br>
+          <b>2025 CCPC 东北邀请赛</b>　银牌<br>
+          <b>2026 ICPC 沈阳邀请赛</b>　铜牌<br>
+          <b>2026 蓝桥杯 C++ A 组</b>　国家二等奖
+        </p>
+      </div>
+
+      <div class="item">
+        <h3>吉林大学 · 软件工程</h3>
+        <div class="when">2024.09 – 2028.06（本科在读）</div>
+        <p>
+          主修数据结构与算法、计算机组成原理、操作系统、数据库系统、计算机网络等课程。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 联系 ==================== -->
+  <section id="contact" class="fade">
+    <h2>联系我</h2>
+    <p class="lead">找实习中，欢迎交流</p>
+    <div class="contact">
+      <a class="ct" href="https://github.com/cha0son" target="_blank" rel="noopener">
+        <div class="k">GitHub</div><div class="v">github.com/cha0son</div>
+      </a>
+      <a class="ct" href="你的简历.pdf" target="_blank">
+        <div class="k">简历</div><div class="v">下载 PDF 版</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div>© <span id="year"></span> chaoson · 吉林大学软件工程</div>
+  <div class="tip">
+    手写 HTML/CSS，无框架 · 托管于 GitHub Pages
+  </div>
+</footer>
+
+<div id="backtop" role="button" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</div>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  // 滚动淡入
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade').forEach((el, i) => {
+    el.style.transitionDelay = Math.min(i * 60, 240) + 'ms';
+    io.observe(el);
+  });
+
+  /* ==================== 动态效果 ==================== */
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* 1. Hero 粒子星座背景 */
+  (function stars(){
+    const cv = document.getElementById('stars');
+    if (!cv || REDUCED) return;
+    const ctx = cv.getContext('2d', { alpha: true });
+    let W = 0, H = 0, pts = [], raf = null, visible = true;
+
+    function resize(){
+      const r = cv.parentElement.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = r.width; H = r.height;
+      cv.width = W * dpr; cv.height = H * dpr;
+      cv.style.width = W + 'px'; cv.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // 按面积决定粒子数，最多 72 个，保证低端机也流畅
+      const n = Math.min(72, Math.round(W * H / 17000));
+      pts = Array.from({ length: n }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - .5) * .22,
+        vy: (Math.random() - .5) * .22,
+        r: Math.random() * 1.6 + .7
+      }));
+    }
+
+    function frame(){
+      if (!visible) { raf = null; return; }
+      ctx.clearRect(0, 0, W, H);
+
+      for (const p of pts){
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, 6.2832);
+        ctx.fillStyle = 'rgba(140,190,255,.55)';
+        ctx.fill();
+      }
+
+      // 距离小于 125px 的粒子之间连线，透明度随距离衰减
+      for (let i = 0; i < pts.length; i++){
+        for (let j = i + 1; j < pts.length; j++){
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < 15625){
+            const a = (1 - Math.sqrt(d2) / 125) * .3;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = 'rgba(109,231,183,' + a + ')';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    // 移出视口就停掉动画，省电
+    new IntersectionObserver(es => {
+      visible = es[0].isIntersecting;
+      if (visible && !raf) raf = requestAnimationFrame(frame);
+    }, { threshold: 0 }).observe(cv);
+  })();
+
+  /* 2. 打字机副标题 */
+  (function typing(){
+    const el = document.getElementById('tw');
+    if (!el) return;
+    const lines = [
+      'Java Backend Developer',
+      'Spring Boot / MySQL / Redis',
+      'Competitive Programmer',
+      'Graph Theory · Computational Geometry'
+    ];
+    if (REDUCED){ el.textContent = lines[0]; return; }
+    let li = 0, ci = 0, del = false;
+    (function tick(){
+      const cur = lines[li];
+      el.textContent = cur.slice(0, ci);
+      if (!del && ci < cur.length){ ci++; setTimeout(tick, 58); }
+      else if (!del){ del = true; setTimeout(tick, 1500); }
+      else if (ci > 0){ ci--; setTimeout(tick, 26); }
+      else { del = false; li = (li + 1) % lines.length; setTimeout(tick, 260); }
+    })();
+  })();
+
+  /* 3. 顶部滚动进度条 */
+  (function progress(){
+    const bar = document.getElementById('progress');
+    if (!bar) return;
+    const upd = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + '%';
+    };
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  })();
+
+  /* 3b. 返回顶部 + 移动端菜单 */
+  (function backtop(){
+    const b = document.getElementById('backtop');
+    if (!b) return;
+    const upd = () => b.classList.toggle('on', window.scrollY > 520);
+    window.addEventListener('scroll', upd, { passive: true });
+    b.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    upd();
+  })();
+
+  (function mobileMenu(){
+    const burger = document.getElementById('burger');
+    const nav = document.getElementById('nav');
+    if (!burger || !nav) return;
+    burger.addEventListener('click', e => { e.stopPropagation(); nav.classList.toggle('open'); });
+    nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => nav.classList.remove('open')));
+    document.addEventListener('click', () => nav.classList.remove('open'));
+    window.addEventListener('resize', () => { if (innerWidth > 640) nav.classList.remove('open'); });
+  })();
+
+  /* 4. 鼠标跟随光晕（用 transform 走合成层，不掉帧） */
+  (function glow(){
+    const g = document.getElementById('glow');
+    if (!g || REDUCED || window.matchMedia('(hover:none)').matches) {
+      if (g) g.style.display = 'none';
+      return;
+    }
+    let tx = window.innerWidth / 2, ty = 220, cx = tx, cy = ty;
+    window.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+    (function loop(){
+      cx += (tx - cx) * .07;
+      cy += (ty - cy) * .07;
+      g.style.transform = `translate(${cx}px,${cy}px) translate(-50%,-50%)`;
+      requestAnimationFrame(loop);
+    })();
+  })();
+
+  /* 5. 技能条：进入视口时按百分比展开 */
+  (function skillbars(){
+    const levels = [88, 82, 66, 74];   // 四张技能卡的强度，按实际水平调
+    document.querySelectorAll('.sk').forEach((card, i) => {
+      const w = levels[i % levels.length];
+      const bar = document.createElement('div');
+      bar.className = 'skillbar';
+      bar.innerHTML = '<i style="--w:' + w + '%"></i>';
+      card.appendChild(bar);
+    });
+    const io2 = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+    }, { threshold: .35 });
+    document.querySelectorAll('.sk').forEach(c => io2.observe(c));
+  })();
+</script>
+</body>
+</html>
