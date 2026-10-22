@@ -4,6 +4,80 @@
 这个文件是 Codeforces 题库的离线快照，页面首屏靠它秒开；点右上角
 **同步最新题库** 会直接拉 CF API 并写进浏览器 localStorage，不走这个文件。
 
+---
+
+## 站内读题的题面数据（reader/data/）
+
+点开任意题目卡片会在弹窗里显示题面。题面来自 `reader/data/{题号}.json`，
+由 `_build/crawl_reader.py` 抓取生成。
+
+### 为什么是「预先生成」而不是「实时抓」
+
+`codeforces.com` 和 `luogu.com.cn` **都在 Cloudflare 后面**。实测：
+
+| 出口 | 结果 |
+|---|---|
+| 住宅宽带（本机） | 200，正常拿到题面 |
+| GitHub Actions（Azure） | `403 Just a moment...` |
+| Vercel | `403` |
+
+也就是说**任何机房 IP 都会被 Cloudflare 的 JS 挑战拦掉**，换云厂商、换区域、
+换请求头都没用（我试过全部）。所以只能由能访问的机器预先生成，访客直接读同源 JSON。
+
+### 更新命令
+
+```powershell
+cd my-homepage
+
+# 抓一个难度区间（默认 1200-1600，本次最多 400 道，可中断续爬）
+python _build\crawl_reader.py --min 1200 --max 1600 --limit 400
+
+# 抓指定题号
+python _build\crawl_reader.py 1858B 1528A
+
+# 已收录的想重抓
+python _build\crawl_reader.py --min 1400 --max 1600 --limit 100 --force
+```
+
+脚本会跳过已收录的题目，所以重复执行就是**增量续爬**；每 10 题落一次盘，
+中断了重跑同一条命令即可接着来。
+
+### 数据形状
+
+```jsonc
+// reader/data/1858B.json
+{
+  "id": "CF1858B", "tag": "1858B",
+  "title": "The Walkway",
+  "difficulty": 3,          // 洛谷 1-7 难度
+  "timeMs": 1000, "memoryKb": 256000,
+  "submit": 566, "accepted": 273,
+  "content": { "description": "...", "formatI": "...", "formatO": "...", "hint": "..." },
+  "translations": { "zh-CN": {...}, "en": {...} },   // 中英双语，前端可切换
+  "samples": [{ "input": "...", "output": "..." }],
+  "url": "https://www.luogu.com.cn/problem/CF1858B",
+  "cfUrl": "https://codeforces.com/problemset/problem/1858/B"
+}
+
+// reader/data/index.json —— { gen, ids[], meta{tag: {title, rating, difficulty}} }
+```
+
+### 前端取数顺序
+
+`index.html` 里的 `openReader()` 依次尝试：
+
+1. `reader/data/{tag}.json` —— 同源静态，最快最可靠
+2. `https://cf-live-eight.vercel.app/api/problem?id=` —— 在线接口（机房出口被拦，通常不可用）
+3. 都没有 → 提示「还没收录」＋ 洛谷 / Codeforces 链接
+
+### 深链接
+
+`https://cha0son.github.io/?id=1858B` 会直接打开该题的读题弹窗，方便发给别人。
+
+---
+
+## 题库快照（data/problems.json）怎么更新
+
 想更新仓库里的快照，按下面三步走。
 
 ## 1. 抓原始数据

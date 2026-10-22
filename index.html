@@ -977,6 +977,28 @@ function closeModal(){
   liveProb = null;
 }
 
+function fetchJson(url, ms){
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, ms || 4000);
+  return fetch(url, { signal: ctrl.signal, cache: "no-cache" })
+    .then(function(r){
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(j){ clearTimeout(timer); return j; })
+    .catch(function(e){ clearTimeout(timer); throw e; });
+}
+
+/**
+ * 读题，依次尝试：
+ *   1. 同源静态数据 reader/data/{tag}.json —— 爬虫预先生成，最快最可靠
+ *   2. cf-live 的在线接口 —— 能通就用
+ *   3. 都没有 —— 给洛谷 / Codeforces 链接
+ *
+ * 为什么以静态数据为主：codeforces.com 和 luogu.com.cn 都在 Cloudflare 后面，
+ * 任何机房 IP（Vercel / GitHub Actions / 云函数）都会拿到「Just a moment...」挑战页，
+ * 只有住宅网络能过。所以由能通的机器预先生成，访客读同源 JSON。
+ */
 function openReader(tag){
   var cf = cfUrlOf(tag);
   $("mTitle").textContent = tag + " · 加载中…";
@@ -987,54 +1009,40 @@ function openReader(tag){
                          '<div class="skel" style="height:180px;margin-top:12px"></div>';
   $("modal").className = "modal show";
 
-  var ctrl = new AbortController();
-  // 4.5 秒拿不到就走 iframe 兜底，别让人对着骨架屏干等
-  var timer = setTimeout(function(){ ctrl.abort(); }, 4500);
+  var sources = [
+    "reader/data/" + tag + ".json",
+    LIVE_BASE + "/api/problem?id=" + encodeURIComponent(tag)
+  ];
 
-  fetch(LIVE_BASE + "/api/problem?id=" + encodeURIComponent(tag), { signal: ctrl.signal })
-    .then(function(r){
-      return r.json().then(function(b){ return { ok: r.ok, b: b }; });
-    })
-    .then(function(res){
-      clearTimeout(timer);
-      if (!res.ok) throw new Error(res.b.error || "读取失败");
-      liveProb = res.b;
-      renderLive(state.lang || "zh-CN");
-    })
-    .catch(function(e){
-      clearTimeout(timer);
-      renderFallback(tag, e);
-    });
+  (function tryNext(i, lastErr){
+    if (i >= sources.length){ renderFallback(tag, lastErr); return; }
+    fetchJson(sources[i], i === 0 ? 4000 : 4500)
+      .then(function(data){
+        if (!data || !data.title) throw new Error("数据不完整");
+        liveProb = data;
+        renderLive(state.lang || "zh-CN");
+      })
+      .catch(function(e){ tryNext(i + 1, e); });
+  })(0, null);
 }
 
 function renderFallback(tag, e){
   var cf = cfUrlOf(tag);
   var cid = tag.match(/^(\d+)/)[1];
-  var pid = "CF" + cid + tag.slice(cid.length);
-  var luoguUrl = "https://www.luogu.com.cn/problem/" + pid;
-  var msg = (e && e.name === "AbortError")
-    ? "在线接口超时"
-    : String((e && e.message) || e);
+  var luoguUrl = "https://www.luogu.com.cn/problem/CF" + cid + tag.slice(cid.length);
+  var msg = (e && e.name === "AbortError") ? "请求超时" : String((e && e.message) || e);
 
-  // 洛谷允许被 iframe 嵌入（无 X-Frame-Options、无 CSP、无 frame-busting），
-  // 所以接口不可用时直接嵌进来，用访客自己的 IP 加载，绕开后端出口被拦的问题。
-  $("mTitle").textContent = tag + " · 洛谷题面";
-  $("mCf").href = cf;
+  $("mTitle").textContent = tag + " · 未收录";
   $("mLang").style.display = "none";
   $("mBody").innerHTML =
-    '<div style="font-size:12.5px;color:var(--muted);background:rgba(255,180,60,.08);' +
-    'border:1px solid rgba(255,180,60,.3);border-radius:9px;padding:9px 13px;margin-bottom:12px">' +
-    "站内接口没取到题面（" + esc(msg) + "），已改为直接嵌入洛谷页面，内容一样是全的。" +
-    "</div>" +
-    '<iframe src="' + esc(luoguUrl) + '" referrerpolicy="no-referrer" ' +
-    'style="width:100%;height:min(72vh,720px);min-height:420px;border:1px solid var(--border);' +
-    'border-radius:10px;background:#fff"></iframe>' +
-    '<div style="margin-top:12px;font-size:12px;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap">' +
-    '<a href="' + esc(luoguUrl) + '" target="_blank" rel="noopener">在新标签打开洛谷</a>' +
-    '<a href="' + cf + '" target="_blank" rel="noopener">Codeforces 提交</a>' +
-    (state.readerSet.has(tag)
-      ? '<a href="reader/' + tag + '.html">读本地缓存页</a>' : "") +
-    "</div>";
+    '<div class="empty" style="border-style:solid"><h4>这道题还没收录</h4>' +
+    "<p>本地题库暂时没有它。<br>" +
+    '<span style="font-size:12px;color:var(--dim)">' + esc(msg) + "</span></p>" +
+    '<p style="margin-top:16px">' +
+    '<a class="primary" href="' + esc(luoguUrl) + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;margin-right:8px">在洛谷读</a>' +
+    '<a class="primary" href="' + cf + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block">去 Codeforces</a></p></div>';
   $("modal").querySelector(".modal-box").scrollTop = 0;
 }
 
@@ -1127,6 +1135,15 @@ async function main(){
   $("hi").value = state.hi;
   if (state.problems.length) render();
   $("sort").value = state.sort;
+
+  // 深链接：?id=1858B 直接打开读题弹窗，方便把某道题发给别人
+  try {
+    var want = new URLSearchParams(location.search).get("id");
+    if (want){
+      var m = String(want).trim().toUpperCase().match(/^(\d+)\s*[/-]?\s*([A-Z]\d*)$/);
+      if (m) openReader(m[1] + m[2]);
+    }
+  } catch(e){}
 }
 
 main();

@@ -89,7 +89,12 @@ function run(hash, opts) {
     AbortController: class { constructor(){ this.signal = {}; } abort(){} },
     fetch: async (url) => {
       const u = String(url);
-      // 站内读题接口
+      // 同源静态题面：reader/data/{tag}.json
+      if (u.indexOf("reader/data/") >= 0) {
+        if (!opts.local) return { ok: false, json: async () => ({}) };
+        return { ok: true, json: async () => opts.local };
+      }
+      // 在线接口
       if (u.indexOf("/api/problem") >= 0) {
         if (!opts.live) return { ok: false, json: async () => ({ error: "接口不可用" }) };
         return { ok: true, json: async () => opts.live };
@@ -197,16 +202,29 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   results.push(["弹窗保留了 CF 链接",
                 (e.nodes.mCf.href || "").includes("codeforces.com"), e.nodes.mCf.href]);
 
-  // 场景 F: 接口挂了 → 弹窗给兜底
+  // 场景 F: 全都没有 → 弹窗给兜底链接
   const f = run("", {});
   await sleep(400);
   const fc = f.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
   fc.querySelector(".hit").fire("click", { preventDefault() {} });
-  await sleep(300);
-  results.push(["接口失败时弹窗不白屏", f.nodes.mBody._html.includes("没取到题面"), ""]);
-  results.push(["接口失败时改为嵌入洛谷 iframe",
-                f.nodes.mBody._html.includes("<iframe") &&
+  await sleep(400);
+  results.push(["取不到题面时弹窗不白屏", f.nodes.mBody._html.includes("还没收录"), ""]);
+  results.push(["取不到题面时给了洛谷链接",
                 f.nodes.mBody._html.includes("luogu.com.cn/problem/"), ""]);
+  results.push(["不再使用 iframe 嵌套", !f.nodes.mBody._html.includes("<iframe"), ""]);
+
+  // 场景 G: 同源静态数据优先（在线接口完全不可用时也能读）
+  const g = run("", { local: live });
+  await sleep(400);
+  const gc = g.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
+  gc.querySelector(".hit").fire("click", { preventDefault() {} });
+  await sleep(400);
+  results.push(["仅有同源数据时也能渲染题面",
+                g.nodes.mBody._html.includes("题目描述") &&
+                g.nodes.mBody._html.includes("6 2 2"), ""]);
+  results.push(["同源数据路径不依赖在线接口",
+                g.nodes.mTitle.textContent === "The Walkway",
+                `"${g.nodes.mTitle.textContent}"`]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;
