@@ -574,17 +574,39 @@ async function syncFromApi(silent){
 }
 
 /* ---------------- 打分 ---------------- */
+// 分位数（输入需已升序）
+function quantile(sorted, q){
+  if (!sorted || !sorted.length) return null;
+  var pos = (sorted.length - 1) * q;
+  var lo = Math.floor(pos), hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo));
+}
+
+/**
+ * 目标难度。
+ *
+ * 关键：没有官方 rating 时不再假装 1200。
+ * profile.est 是从提交记录推出来的（见 analyze），推不出来就是 null，
+ * 这时直接用区间中点，不做任何难度偏移。
+ */
 function targetRating(){
   var mid = (state.lo + state.hi) / 2;
-  var base = state.profile ? state.profile.rating : mid;
+  var prof = state.profile;
+  if (!prof) return clamp(mid, state.lo, state.hi);
+  if (prof.est == null) return clamp(mid, state.lo, state.hi);
+
   var delta = {easy: 0, mid: 150, hard: 300}[state.challenge];
-  return clamp(base + delta, state.lo, state.hi);
+  return clamp(prof.est + delta, state.lo, state.hi);
 }
 
 function makeCtx(seed){
+  var prof = state.profile;
   return {
     target: targetRating(),
-    profile: state.profile,
+    profile: prof,
+    known: !!(prof && prof.est != null),
+    maxAc: prof ? (prof.maxAc || 0) : 0,
     maxSolved: state.maxSolved,
     minCid: state.minCid,
     maxCid: state.maxCid,
@@ -596,6 +618,11 @@ function score(p, c){
   // 难度契合（高斯）：离目标难度越近越高
   var diff = p.rating - c.target;
   var D = Math.exp(-(diff * diff) / (2 * SIGMA * SIGMA));
+
+  // 明显超出历史最好成绩的题打折：AC 最高 1400 的人推 2000 分是浪费
+  if (c.maxAc && p.rating > c.maxAc + 300) D *= 0.5;
+  else if (c.maxAc && p.rating > c.maxAc + 200) D *= 0.75;
+
   // 质量：通过数取对数归一
   var Q = Math.log1p(p.solved) / Math.log1p(Math.max(c.maxSolved, 2));
   // 新鲜度：contestId 越大越新
@@ -609,11 +636,21 @@ function score(p, c){
 /* ---------------- 推荐理由 ---------------- */
 function reasons(p, c){
   var out = [];
-  if (c.profile){
-    var d = p.rating - c.profile.rating;
-    if (Math.abs(d) <= 150) out.push("贴近你的 rating " + c.profile.rating);
-    else if (d > 0) out.push("比你的 rating 高 " + d + " 分");
-    else out.push("低于你的 rating " + (-d) + " 分，巩固用");
+  var prof = c.profile;
+
+  if (prof && prof.est != null){
+    var d = p.rating - prof.est;
+    if (Math.abs(d) <= 150) out.push("贴着你的水平 " + prof.est);
+    else if (d > 0) out.push("比你的水平高 " + d + " 分");
+    else out.push("低于你的水平 " + (-d) + " 分，巩固用");
+
+    if (prof.failed && prof.failed.has(p.cid + p.idx)){
+      out.push("你试过但没过，可以再战");
+    } else if (prof.maxAc && p.rating > prof.maxAc + 200){
+      out.push("超出你 AC 过的最高题 " + (p.rating - prof.maxAc) + " 分");
+    }
+  } else if (prof){
+    out.push("账号信息不足以判断水平，按区间中点 " + c.target + " 分");
   } else {
     out.push("区间目标 " + c.target + " 分");
   }
@@ -783,25 +820,69 @@ async function analyze(){
     var info = (await cfCall("user.info", {handles: handle}))[0];
     await sleep(2100);
     btn.textContent = "拉取提交…";
-    var subs = await cfCall("user.status", {handle: handle, from: 1, count: 10000});
+    var subs = await cfCall("user.status", {handle: info.handle, from: 1, count: 10000});
 
     var solved = new Set();
     var seen = new Set();
+    var solvedRatings = [];
+    var failed = new Set();
+    var maxAc = 0;
+
     for (var i = 0; i < subs.length; i++){
       var s = subs[i];
-      if (s.verdict !== "OK" || !s.problem || !s.problem.contestId) continue;
+      if (!s.problem || !s.problem.contestId) continue;
       var key = s.problem.contestId + s.problem.index;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      solved.add(key);
+      if (s.verdict === "OK"){
+        if (seen.has(key)) continue;
+        seen.add(key);
+        solved.add(key);
+        var r = s.problem.rating;
+        if (r){
+          solvedRatings.push(r);
+          if (r > maxAc) maxAc = r;
+        }
+      } else if (!seen.has(key)){
+        failed.add(key);
+      }
+    }
+
+    // ---- 水平估计：优先官方 rating，其次从过题记录推 ----
+    solvedRatings.sort(function(a, b){ return a - b; });
+    var official = (typeof info.rating === "number") ? info.rating : null;
+    var est = null, estSrc = "none", basis = "";
+
+    if (official != null){
+      est = official;
+      estSrc = "official";
+      basis = "Codeforces 官方 rating";
+    } else if (solvedRatings.length >= 5){
+      var q60 = quantile(solvedRatings, 0.6);
+      est = Math.round((q60 + 50) / 50) * 50;   // 取整到 50
+      estSrc = "solved";
+      basis = "未定级；按 " + solvedRatings.length + " 道已 AC 题目的 60% 分位（" + q60 + "）估算";
+    } else if (solvedRatings.length > 0){
+      est = Math.round((maxAc + 150) / 50) * 50;
+      estSrc = "solved-few";
+      basis = "未定级；只 AC 过 " + solvedRatings.length + " 道有评分的题（最高 " + maxAc + "），粗估";
+    } else {
+      estSrc = "none";
+      basis = "账号里没有带评分的过题记录，无法判断水平";
     }
 
     state.profile = {
       handle: info.handle,
-      rating: info.rating || 1200,
-      maxRating: info.maxRating || 0,
-      solved: solved
+      official: official,
+      maxRating: (typeof info.maxRating === "number") ? info.maxRating : null,
+      est: est,
+      estSrc: estSrc,
+      basis: basis,
+      solved: solved,
+      failed: failed,
+      maxAc: maxAc,
+      solvedWithRating: solvedRatings.length,
+      p75: solvedRatings.length ? quantile(solvedRatings, 0.75) : null
     };
+
     try {
       localStorage.setItem(LS_PREFS, JSON.stringify({
         handle: info.handle, lo: state.lo, hi: state.hi, challenge: state.challenge
@@ -810,9 +891,19 @@ async function analyze(){
 
     renderProfile();
     render();
-    toast("已分析 " + info.handle + "：读了 " + fmt(subs.length) + " 次提交，通过 " + fmt(solved.size) + " 道题");
+    toast("已分析 " + info.handle + "：读了 " + fmt(subs.length) + " 次提交，通过 " +
+          fmt(solved.size) + " 道题" +
+          (est == null ? "（无法判断水平）" : "，水平约 " + est));
   } catch (e){
-    toast("分析失败：" + e.message, true);
+    var msg = String(e.message || e);
+    if (/Failed to fetch|NetworkError|Load failed/i.test(msg)){
+      msg = "连不上 Codeforces API（浏览器到 cf 的连接被断），可能需要科学上网";
+    } else if (/not found/i.test(msg)){
+      msg = "找不到这个 Codeforces 用户，检查一下拼写";
+    } else if (/limit exceeded/i.test(msg)){
+      msg = "Codeforces API 限流了（每 2 秒只能请求一次），等几秒再试";
+    }
+    toast("分析失败：" + msg, true);
   } finally {
     btn.disabled = false;
     btn.textContent = "分析";
@@ -824,13 +915,36 @@ function renderProfile(){
   var el = $("profile");
   if (!p){ el.className = "profile"; el.innerHTML = ""; return; }
 
+  var cells = ['<span class="handle">' + esc(p.handle) + "</span>"];
+
+  if (p.official != null){
+    cells.push('<span><span class="k">官方 rating</span> <span class="v" style="color:' +
+      rankColor(p.official) + '">' + p.official + "</span></span>");
+  } else {
+    cells.push('<span><span class="k">官方 rating</span> <span class="v" style="color:var(--dim)">未定级</span></span>');
+  }
+
+  if (p.est != null){
+    cells.push('<span><span class="k">' + (p.estSrc === "official" ? "水平" : "估算水平") +
+      '</span> <span class="v" style="color:' + rankColor(p.est) + '">' + p.est + "</span></span>");
+  } else {
+    cells.push('<span><span class="k">水平</span> <span class="v" style="color:var(--bad)">无法判断</span></span>');
+  }
+
+  cells.push('<span><span class="k">已通过</span> <span class="v">' + fmt(p.solved.size) + "</span></span>");
+  if (p.maxAc) {
+    cells.push('<span><span class="k">最高 AC</span> <span class="v" style="color:' +
+      rankColor(p.maxAc) + '">' + p.maxAc + "</span></span>");
+  }
+  cells.push('<button class="ghost" id="btnReset" style="margin-left:auto">清除</button>');
+
   el.className = "profile show";
-  el.innerHTML =
-    '<span class="handle">' + esc(p.handle) + "</span>" +
-    '<span><span class="k">rating</span> <span class="v" style="color:' + rankColor(p.rating) + '">' + p.rating + "</span></span>" +
-    '<span><span class="k">最高</span> <span class="v">' + p.maxRating + "</span></span>" +
-    '<span><span class="k">已通过</span> <span class="v">' + fmt(p.solved.size) + "</span></span>" +
-    '<button class="ghost" id="btnReset" style="margin-left:auto">清除</button>';
+  el.innerHTML = cells.join("") +
+    '<div style="flex-basis:100%;font-size:12px;color:var(--dim);margin-top:2px">' +
+    esc(p.basis) +
+    (p.est == null ? "。建议手动把难度区间调到你想练的档位。" : "") +
+    (p.failed.size ? " · 曾尝试未通过 " + fmt(p.failed.size) + " 道" : "") +
+    "</div>";
 
   $("btnReset").onclick = function(){
     state.profile = null;

@@ -89,6 +89,16 @@ function run(hash, opts) {
     AbortController: class { constructor(){ this.signal = {}; } abort(){} },
     fetch: async (url) => {
       const u = String(url);
+      // Codeforces API（账号分析）
+      if (u.indexOf("codeforces.com/api/") >= 0) {
+        if (u.indexOf("user.info") >= 0) {
+          return { ok: true, json: async () => ({ status: "OK", result: [opts.cfInfo || {}] }) };
+        }
+        if (u.indexOf("user.status") >= 0) {
+          return { ok: true, json: async () => ({ status: "OK", result: opts.cfSubs || [] }) };
+        }
+        return { ok: false, json: async () => ({ status: "FAILED" }) };
+      }
       // 同源静态题面：reader/data/{tag}.json
       if (u.indexOf("reader/data/") >= 0) {
         if (!opts.local) return { ok: false, json: async () => ({}) };
@@ -183,6 +193,51 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   results.push(["快捷区间按钮齐全",
                 (html.match(/data-lo="\d+"/g) || []).length >= 6,
                 `HTML 里 ${(html.match(/data-lo="\d+"/g) || []).length} 个`]);
+
+  // 场景 G: 未定级但有过题记录 → 必须按记录估算，不能瞎套 1200
+  const subsLow = [
+    { verdict: "OK", problem: { contestId: 1, index: "A", rating: 800 } },
+    { verdict: "OK", problem: { contestId: 2, index: "A", rating: 800 } },
+    { verdict: "OK", problem: { contestId: 3, index: "A", rating: 900 } },
+    { verdict: "OK", problem: { contestId: 4, index: "A", rating: 900 } },
+    { verdict: "OK", problem: { contestId: 5, index: "A", rating: 900 } },
+    { verdict: "WRONG_ANSWER", problem: { contestId: 6, index: "C", rating: 1600 } },
+  ];
+  const g = run("", { cfInfo: { handle: "newbie01" }, cfSubs: subsLow });
+  await sleep(400);
+  g.nodes.handle.value = "newbie01";
+  g.nodes.btnAnalyze.fire("click");
+  await sleep(600);
+  const gt = String(g.nodes.profile._html);
+  results.push(["未定级账号标为未定级", gt.includes("未定级"), ""]);
+  results.push(["显示了估算水平", gt.includes("估算水平"), ""]);
+  results.push(["估算来自过题记录", gt.includes("已 AC 题目"), ""]);
+  results.push(["估算值 950（不是 1200）", gt.includes(">950<"), ""]);
+  results.push(["统计到 5 道过题", gt.includes(">5<"), ""]);
+  results.push(["识别出曾尝试未通过", gt.includes("曾尝试未通过"), ""]);
+
+  // 场景 H: 官方 rating 优先
+  const h = run("", {
+    cfInfo: { handle: "rated01", rating: 1723, maxRating: 1800 },
+    cfSubs: [{ verdict: "OK", problem: { contestId: 9, index: "A", rating: 1200 } }],
+  });
+  await sleep(400);
+  h.nodes.handle.value = "rated01";
+  h.nodes.btnAnalyze.fire("click");
+  await sleep(600);
+  const ht = String(h.nodes.profile._html);
+  results.push(["有官方 rating 时用它", ht.includes("1723"), ht.replace(/<[^>]+>/g, " ").slice(0, 80)]);
+  results.push(["官方 rating 时不标估算", !ht.includes("估算水平"), ""]);
+
+  // 场景 I: 完全无提交记录 → 明确说无法判断
+  const i2 = run("", { cfInfo: { handle: "empty01" }, cfSubs: [] });
+  await sleep(400);
+  i2.nodes.handle.value = "empty01";
+  i2.nodes.btnAnalyze.fire("click");
+  await sleep(600);
+  const it = String(i2.nodes.profile._html);
+  results.push(["无记录时明说无法判断", it.includes("无法判断"), ""]);
+  results.push(["无记录时给出建议", it.includes("手动把难度区间"), ""]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;
