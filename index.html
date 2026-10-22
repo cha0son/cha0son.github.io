@@ -1009,21 +1009,15 @@ function openReader(tag){
                          '<div class="skel" style="height:180px;margin-top:12px"></div>';
   $("modal").className = "modal show";
 
-  var sources = [
-    "reader/data/" + tag + ".json",
-    LIVE_BASE + "/api/problem?id=" + encodeURIComponent(tag)
-  ];
-
-  (function tryNext(i, lastErr){
-    if (i >= sources.length){ renderFallback(tag, lastErr); return; }
-    fetchJson(sources[i], i === 0 ? 4000 : 4500)
-      .then(function(data){
-        if (!data || !data.title) throw new Error("数据不完整");
-        liveProb = data;
-        renderLive(state.lang || "zh-CN");
-      })
-      .catch(function(e){ tryNext(i + 1, e); });
-  })(0, null);
+  // 在线接口已确认不可用（机房出口被 Cloudflare 拦），不再拖 4 秒超时，
+  // 直接读同源静态数据；没有就提示未收录。
+  fetchJson("reader/data/" + tag + ".json", 4000)
+    .then(function(data){
+      if (!data || !data.title) throw new Error("数据不完整");
+      liveProb = data;
+      renderLive(state.lang || "zh-CN");
+    })
+    .catch(function(e){ renderFallback(tag, e); });
 }
 
 function renderFallback(tag, e){

@@ -178,7 +178,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     url: "https://www.luogu.com.cn/problem/CF1858B",
     cfUrl: "https://codeforces.com/problemset/problem/1858/B",
   };
-  const e = run("", { live });
+  const e = run("", { local: live });
   await sleep(400);
   results.push(["有清单/无清单都能渲染", e.nodes.grid.children.length > 0, ""]);
 
