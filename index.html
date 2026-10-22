@@ -105,6 +105,19 @@
   }
   .ticks{display:flex; justify-content:space-between; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums}
 
+  /* 快捷难度区间 */
+  .presets{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px}
+  .presets button{
+    padding:4px 11px; border-radius:99px; font-size:12px; cursor:pointer;
+    background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+    transition:.14s; font-variant-numeric:tabular-nums;
+  }
+  .presets button:hover{border-color:#40506a; color:var(--text)}
+  .presets button.on{
+    background:linear-gradient(135deg,rgba(59,130,246,.28),rgba(34,211,238,.18));
+    border-color:#4a8cf7; color:#dbeafe; font-weight:600;
+  }
+
   /* 分段控件 */
   .seg{display:inline-flex; padding:3px; gap:3px; background:var(--surface2); border-radius:10px; border:1px solid var(--border)}
   .seg button{padding:6px 15px; border-radius:8px; font-size:13px; color:var(--muted); transition:.14s}
@@ -313,6 +326,14 @@
         <input type="range" id="hi" min="800" max="3500" step="100" value="1600" aria-label="最高难度">
       </div>
       <div class="ticks"><span>800</span><span>1500</span><span>2200</span><span>2900</span><span>3500</span></div>
+      <div class="presets" id="presets">
+        <button data-lo="800"  data-hi="1000">800–1000 入门</button>
+        <button data-lo="1000" data-hi="1400">1000–1400 基础</button>
+        <button data-lo="1200" data-hi="1600">1200–1600 常见</button>
+        <button data-lo="1600" data-hi="2000">1600–2000 提高</button>
+        <button data-lo="2000" data-hi="2400">2000–2400 竞赛</button>
+        <button data-lo="2400" data-hi="3000">2400+ 硬核</button>
+      </div>
     </div>
 
     <div class="row2">
@@ -370,18 +391,6 @@
   <span id="footMeta"></span>
 </footer>
 
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span class="t" id="mTitle">加载中…</span>
-      <button class="ghost" id="mLang" style="display:none">EN</button>
-      <a class="ghost" id="mCf" target="_blank" rel="noopener">CF ↗</a>
-      <button class="ghost" id="mClose">关闭</button>
-    </div>
-    <div class="modal-body" id="mBody"></div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -405,6 +414,14 @@ function esc(s){
   });
 }
 function fmt(n){ return Number(n).toLocaleString("en-US"); }
+
+var CF_URL = "https://codeforces.com/problemset/problem/";
+
+// 1858B -> https://codeforces.com/problemset/problem/1858/B
+function cfUrlOf(tag){
+  var cid = String(tag).match(/^(\d+)/)[1];
+  return CF_URL + cid + "/" + String(tag).slice(cid.length);
+}
 
 /* ---------------- 状态 ---------------- */
 var state = {
@@ -663,27 +680,23 @@ function render(){
     var p = item.p;
     var tag = p.cid + p.idx;
     var cfUrl = cfUrlOf(tag);
-    var liveUrl = LIVE_BASE + "/?id=" + tag;
+    // 洛谷题号规则: CF + 比赛号 + 题目字母，例如 1858B -> CF1858B
+    var luoguUrl = "https://www.luogu.com.cn/problem/CF" + tag;
 
     var el = document.createElement("div");
     el.className = "card";
     el.style.setProperty("--c", rankColor(p.rating));
     el.innerHTML =
-      '<a class="hit" href="' + liveUrl + '" aria-label="' + esc(tag) + " " + esc(p.name) + '"></a>' +
+      '<a class="hit" href="' + luoguUrl + '" target="_blank" rel="noopener" ' +
+        'aria-label="' + esc(tag) + " " + esc(p.name) + '在洛谷打开"></a>' +
       '<div class="card-top"><span class="badge">' + p.rating + "</span>" +
       '<span class="cidx">' + p.cid + esc(p.idx) + "</span></div>" +
       "<h3>" + esc(p.name) + "</h3>" +
       '<div class="why">' + esc(reasons(p, ctx)) + "</div>" +
       '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-      '<span class="go">站内读题 →</span>' +
+      '<span class="go">洛谷读题 →</span>' +
       '<a class="cf" href="' + cfUrl + '" target="_blank" rel="noopener" title="在 Codeforces 打开（提交用）">CF ↗</a>' +
       "</div>";
-    // 左键在当前页弹窗读题；中键/ Ctrl+点击 仍由浏览器开新标签
-    el.querySelector(".hit").addEventListener("click", function(ev){
-      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-      ev.preventDefault();
-      openReader(tag);
-    });
     frag.appendChild(el);
   });
   grid.appendChild(frag);
@@ -730,21 +743,16 @@ function daily(){
   el.style.gridColumn = "1/-1";
   el.style.padding = "30px";
   el.innerHTML =
-    '<a class="hit" href="' + LIVE_BASE + "/?id=" + dtag + '"' +
-      ' aria-label="' + esc(dtag) + " " + esc(p.name) + '"></a>' +
+    '<a class="hit" href="https://www.luogu.com.cn/problem/CF' + dtag + '" ' +
+      'target="_blank" rel="noopener" aria-label="' + esc(dtag) + " " + esc(p.name) + '"></a>' +
     '<div class="card-top"><span class="badge" style="font-size:14px;padding:4px 11px">' + p.rating + "</span>" +
     '<span class="cidx">' + p.cid + esc(p.idx) + " · 今日一题</span></div>" +
     '<h3 style="font-size:23px;-webkit-line-clamp:3">' + esc(p.name) + "</h3>" +
     '<div class="why" style="font-size:13px">' + esc(reasons(p, makeCtx(0.5))) + "</div>" +
     '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-    '<span class="go" style="opacity:1">站内读题 →</span>' +
+    '<span class="go" style="opacity:1">洛谷读题 →</span>' +
     '<a class="cf" href="' + dCf + '" target="_blank" rel="noopener">CF ↗</a>' +
     "</div>";
-  el.querySelector(".hit").addEventListener("click", function(ev){
-    if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-    ev.preventDefault();
-    openReader(dtag);
-  });
   grid.appendChild(el);
 
   var b = $("banner");
@@ -859,6 +867,14 @@ function paintSlider(){
   var mid = (MIN_R + MAX_R) / 2;
   $("lo").style.zIndex = state.lo > mid ? 5 : 3;
   $("hi").style.zIndex = state.lo > mid ? 3 : 5;
+
+  // 高亮当前匹配的快捷区间
+  var ps = $("presets");
+  if (ps && ps.children){
+    Array.prototype.forEach.call(ps.children, function(x){
+      x.classList.toggle("on", +x.dataset.lo === state.lo && +x.dataset.hi === state.hi);
+    });
+  }
 }
 
 function bind(){
@@ -890,6 +906,17 @@ function bind(){
     syncHash(); render();
   });
 
+  // 快捷难度区间
+  $("presets").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-lo]");
+    if (!b) return;
+    state.lo = +b.dataset.lo;
+    state.hi = +b.dataset.hi;
+    $("lo").value = state.lo;
+    $("hi").value = state.hi;
+    paintSlider(); syncHash(); render();
+  });
+
   $("sort").addEventListener("change", function(e){ state.sort = e.target.value; render(); });
 
   $("btnShuffle").addEventListener("click", function(){
@@ -899,15 +926,6 @@ function bind(){
   });
 
   $("btnDaily").addEventListener("click", daily);
-
-  // 读题弹窗
-  $("mClose").addEventListener("click", closeModal);
-  $("modal").addEventListener("click", function(e){
-    if (e.target === $("modal")) closeModal();
-  });
-  document.addEventListener("keydown", function(e){
-    if (e.key === "Escape") closeModal();
-  });
 
   $("btnAnalyze").addEventListener("click", analyze);
   $("handle").addEventListener("keydown", function(e){ if (e.key === "Enter") analyze(); });
@@ -919,195 +937,6 @@ function bind(){
     catch (err){ toast("同步失败：" + err.message, true); }
     finally { b.disabled = false; b.textContent = "同步最新题库"; }
   });
-}
-
-/* ---------------- 站内读题（联动 cf-live） ---------------- */
-var LIVE_BASE = "https://cf-live-eight.vercel.app";
-var CF_URL = "https://codeforces.com/problemset/problem/";
-
-function cfUrlOf(tag){
-  var cid = tag.match(/^(\d+)/)[1];
-  return CF_URL + cid + "/" + tag.slice(cid.length);
-}
-
-// 极简 Markdown + LaTeX：先把公式挖出来占位，避免 _ { } * 被 Markdown 规则误伤
-function mdToHtml(md){
-  var math = [];
-  var t = String(md || "");
-  t = t.replace(/\$\$([\s\S]+?)\$\$/g, function(m, tex){
-    math.push({ tex: tex.trim(), block: true });
-    return "\u0000M" + (math.length - 1) + "\u0000";
-  });
-  t = t.replace(/\$([^$\n]+?)\$/g, function(m, tex){
-    math.push({ tex: tex.trim(), block: false });
-    return "\u0000M" + (math.length - 1) + "\u0000";
-  });
-  t = esc(t);
-  t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-  t = t.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
-  t = t.replace(/(?:^|\n)((?:[-*+]\s+.*(?:\n|$))+)/g, function(m, g){
-    return "\n<ul>" + g.trim().split(/\n/).map(function(l){
-      return "<li>" + l.replace(/^[-*+]\s+/, "") + "</li>";
-    }).join("") + "</ul>";
-  });
-  t = t.replace(/(?:^|\n)((?:\d+\.\s+.*(?:\n|$))+)/g, function(m, g){
-    return "\n<ol>" + g.trim().split(/\n/).map(function(l){
-      return "<li>" + l.replace(/^\d+\.\s+/, "") + "</li>";
-    }).join("") + "</ol>";
-  });
-  var parts = t.split(/\n{2,}/).map(function(chunk){
-    var s = chunk.trim();
-    if (!s) return "";
-    if (/^<(ul|ol|pre)/.test(s)) return s;
-    return "<p>" + s.replace(/\n/g, "<br>") + "</p>";
-  });
-  t = parts.join("\n");
-  t = t.replace(/\u0000M(\d+)\u0000/g, function(m, i){
-    var it = math[+i];
-    var cls = it.block ? "math-block" : "math";
-    return '<span class="' + cls + '">' + esc(it.tex) + "</span>";
-  });
-  return t;
-}
-
-var liveProb = null;
-
-function closeModal(){
-  $("modal").className = "modal";
-  liveProb = null;
-}
-
-function fetchJson(url, ms){
-  var ctrl = new AbortController();
-  var timer = setTimeout(function(){ ctrl.abort(); }, ms || 4000);
-  return fetch(url, { signal: ctrl.signal, cache: "no-cache" })
-    .then(function(r){
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(j){ clearTimeout(timer); return j; })
-    .catch(function(e){ clearTimeout(timer); throw e; });
-}
-
-/**
- * 读题，依次尝试：
- *   1. 同源静态数据 reader/data/{tag}.json —— 爬虫预先生成，最快最可靠
- *   2. cf-live 的在线接口 —— 能通就用
- *   3. 都没有 —— 给洛谷 / Codeforces 链接
- *
- * 为什么以静态数据为主：codeforces.com 和 luogu.com.cn 都在 Cloudflare 后面，
- * 任何机房 IP（Vercel / GitHub Actions / 云函数）都会拿到「Just a moment...」挑战页，
- * 只有住宅网络能过。所以由能通的机器预先生成，访客读同源 JSON。
- */
-function openReader(tag){
-  var cf = cfUrlOf(tag);
-  $("mTitle").textContent = tag + " · 加载中…";
-  $("mCf").href = cf;
-  $("mCf").style.display = "";
-  $("mLang").style.display = "none";
-  $("mBody").innerHTML = '<div class="skel" style="height:120px"></div>' +
-                         '<div class="skel" style="height:180px;margin-top:12px"></div>';
-  $("modal").className = "modal show";
-
-  // 在线接口已确认不可用（机房出口被 Cloudflare 拦），不再拖 4 秒超时，
-  // 直接读同源静态数据；没有就提示未收录。
-  fetchJson("reader/data/" + tag + ".json", 4000)
-    .then(function(data){
-      if (!data || !data.title) throw new Error("数据不完整");
-      liveProb = data;
-      renderLive(state.lang || "zh-CN");
-    })
-    .catch(function(e){ renderFallback(tag, e); });
-}
-
-function renderFallback(tag, e){
-  var cf = cfUrlOf(tag);
-  var cid = tag.match(/^(\d+)/)[1];
-  var luoguUrl = "https://www.luogu.com.cn/problem/CF" + cid + tag.slice(cid.length);
-  var msg = (e && e.name === "AbortError") ? "请求超时" : String((e && e.message) || e);
-
-  $("mTitle").textContent = tag + " · 未收录";
-  $("mLang").style.display = "none";
-  $("mBody").innerHTML =
-    '<div class="empty" style="border-style:solid"><h4>这道题还没收录</h4>' +
-    "<p>本地题库暂时没有它。<br>" +
-    '<span style="font-size:12px;color:var(--dim)">' + esc(msg) + "</span></p>" +
-    '<p style="margin-top:16px">' +
-    '<a class="primary" href="' + esc(luoguUrl) + '" target="_blank" rel="noopener" ' +
-    'style="display:inline-block;margin-right:8px">在洛谷读</a>' +
-    '<a class="primary" href="' + cf + '" target="_blank" rel="noopener" ' +
-    'style="display:inline-block">去 Codeforces</a></p></div>';
-  $("modal").querySelector(".modal-box").scrollTop = 0;
-}
-
-function renderLive(lang){
-  var p = liveProb;
-  if (!p) return;
-  var c = (p.translations && p.translations[lang]) || p.content || {};
-  var hasZh = !!(p.translations && p.translations["zh-CN"]);
-  var hasEn = !!(p.translations && p.translations["en"]);
-
-  $("mTitle").textContent = p.title;
-  if (p.cfUrl) $("mCf").href = p.cfUrl;
-  var langBtn = $("mLang");
-  if (hasZh && hasEn){
-    langBtn.style.display = "";
-    langBtn.textContent = lang === "en" ? "中文" : "EN";
-    langBtn.onclick = function(){
-      state.lang = lang === "en" ? "zh-CN" : "en";
-      renderLive(state.lang);
-    };
-  } else {
-    langBtn.style.display = "none";
-  }
-
-  var meta = [];
-  if (p.difficulty) meta.push("洛谷难度 " + p.difficulty);
-  if (p.timeMs) meta.push((p.timeMs / 1000) + " 秒");
-  if (p.memoryKb) meta.push(Math.round(p.memoryKb / 1024) + " MB");
-  if (p.submit) meta.push("通过 " + p.accepted + "/" + p.submit + " (" +
-                          Math.round(p.accepted / p.submit * 100) + "%)");
-
-  var html = '<div style="display:flex;gap:7px;flex-wrap:wrap;font-size:12.5px;margin-bottom:18px">' +
-    meta.map(function(x){
-      return '<span style="background:var(--surface2);border:1px solid var(--border);' +
-             'color:var(--muted);padding:3px 10px;border-radius:99px">' + esc(x) + "</span>";
-    }).join("") + "</div>";
-
-  [["background", "题目背景"], ["description", "题目描述"],
-   ["formatI", "输入格式"], ["formatO", "输出格式"]].forEach(function(pair){
-    var v = c[pair[0]];
-    if (v && String(v).trim()){
-      html += '<div class="label" style="margin:22px 0 8px">' + pair[1] + "</div>" +
-              '<div class="md">' + mdToHtml(v) + "</div>";
-    }
-  });
-
-  if (p.samples && p.samples.length){
-    html += '<div class="label" style="margin:22px 0 8px">样例</div><div class="samples">';
-    p.samples.forEach(function(s, i){
-      html += '<div class="sample"><div class="sample-head"><span>样例 ' + (i + 1) +
-        "</span><span>" + esc(p.id) + "</span></div>" +
-        '<div class="sample-body">' +
-        '<div class="sample-col"><h4>输入</h4><pre>' + esc(s.input) + "</pre></div>" +
-        '<div class="sample-col"><h4>输出</h4><pre>' + esc(s.output) + "</pre></div>" +
-        "</div></div>";
-    });
-    html += "</div>";
-  }
-
-  if (c.hint && String(c.hint).trim()){
-    html += '<div class="label" style="margin:22px 0 8px">提示</div>' +
-            '<div class="md">' + mdToHtml(c.hint) + "</div>";
-  }
-
-  html += '<div style="margin-top:26px;font-size:12px;color:var(--dim)">' +
-    '数据源 <a href="' + esc(p.url) + '" target="_blank" rel="noopener">洛谷</a>' +
-    (p.cfUrl ? ' · <a href="' + esc(p.cfUrl) + '" target="_blank" rel="noopener">Codeforces 提交</a>' : "") +
-    "</div>";
-
-  $("mBody").innerHTML = html;
-  $("modal").querySelector(".modal-box").scrollTop = 0;
 }
 
 /* ---------------- 启动 ---------------- */
@@ -1130,12 +959,12 @@ async function main(){
   if (state.problems.length) render();
   $("sort").value = state.sort;
 
-  // 深链接：?id=1858B 直接打开读题弹窗，方便把某道题发给别人
+  // 深链接：?id=1858B 直接跳到洛谷对应题面，方便把某道题发给别人
   try {
     var want = new URLSearchParams(location.search).get("id");
     if (want){
       var m = String(want).trim().toUpperCase().match(/^(\d+)\s*[/-]?\s*([A-Z]\d*)$/);
-      if (m) openReader(m[1] + m[2]);
+      if (m) location.replace("https://www.luogu.com.cn/problem/CF" + m[1] + m[2]);
     }
   } catch(e){}
 }

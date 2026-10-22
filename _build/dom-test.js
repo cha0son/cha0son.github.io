@@ -155,76 +155,34 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   await sleep(400);
   const dCards = d.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
   results.push(["无清单时卡片数量正常", dCards.length > 0, `实际 ${dCards.length}`]);
-  results.push(["卡片链接指向站内读题页",
-                dCards.every(x => x._html.includes("cf-live-eight.vercel.app/?id=")),
-                `异常 ${dCards.filter(x => !x._html.includes("cf-live-eight.vercel.app/?id=")).length} 张`]);
+  results.push(["卡片链接指向洛谷",
+                dCards.every(x => x._html.includes("luogu.com.cn/problem/CF")),
+                `异常 ${dCards.filter(x => !x._html.includes("luogu.com.cn/problem/CF")).length} 张`]);
   results.push(["每张卡都留了 CF 直达链接",
                 dCards.every(x => x._html.includes("codeforces.com/problemset/problem/")), ""]);
   results.push(["卡片外层不是 <a>（避免嵌套链接）",
                 dCards.every(x => x.tagName !== "a"),
                 `实际 ${dCards[0] && dCards[0].tagName}`]);
 
-  // 场景 E: 点卡片 → 弹窗读题
-  const live = {
-    id: "CF1858B", title: "The Walkway", difficulty: 3,
-    timeMs: 1000, memoryKb: 256000, submit: 566, accepted: 273,
-    content: { locale: "zh-CN", background: "", description: "有 $n$ 个长椅。",
-               formatI: "输入 $t$。", formatO: "输出答案。", hint: "" },
-    translations: {
-      "zh-CN": { description: "有 $n$ 个长椅。", formatI: "输入 $t$。", formatO: "输出答案。", hint: "" },
-      en: { description: "There are $n$ benches.", formatI: "Input $t$.", formatO: "Output.", hint: "" },
-    },
-    samples: [{ input: "8\n6 2 2", output: "3 1" }],
-    url: "https://www.luogu.com.cn/problem/CF1858B",
-    cfUrl: "https://codeforces.com/problemset/problem/1858/B",
-  };
-  const e = run("", { local: live });
+  // 场景 E: 卡片直接跳洛谷（不再弹窗）
+  const e = run("", {});
   await sleep(400);
-  results.push(["有清单/无清单都能渲染", e.nodes.grid.children.length > 0, ""]);
-
   const firstCard = e.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
-  firstCard.querySelector(".hit").fire("click", { preventDefault() {}, metaKey: false, ctrlKey: false });
-  await sleep(300);
+  results.push(["卡片 href 指向洛谷", firstCard._html.includes("luogu.com.cn/problem/CF"), ""]);
+  results.push(["卡片新标签打开", firstCard._html.includes('target="_blank"'), ""]);
+  results.push(["卡片保留 CF 直达链接",
+                firstCard._html.includes("codeforces.com/problemset/problem/"), ""]);
+  firstCard.querySelector(".hit").fire("click", { preventDefault() {} });
+  await sleep(150);
+  results.push(["页面已无读题弹窗", !html.includes('id="modal"'), ""]);
+  results.push(["点击不再拦截跳转（无 openReader）", !html.includes("openReader"), ""]);
 
-  const modal = e.nodes.modal;
-  const mbody = e.nodes.mBody;
-  results.push(["弹窗被打开", modal.className.includes("show"), `className="${modal.className}"`]);
-  results.push(["弹窗标题是题名", e.nodes.mTitle.textContent === "The Walkway",
-                `"${e.nodes.mTitle.textContent}"`]);
-  results.push(["弹窗渲染出题目描述", mbody._html.includes("题目描述"), ""]);
-  results.push(["弹窗渲染出输入/输出格式",
-                mbody._html.includes("输入格式") && mbody._html.includes("输出格式"), ""]);
-  results.push(["弹窗渲染出样例",
-                mbody._html.includes("<pre>") && mbody._html.includes("6 2 2"), ""]);
-  results.push(["弹窗里公式已转换",
-                mbody._html.includes('class="math"') && !/\$\w/.test(mbody._html), ""]);
-  results.push(["弹窗有中英切换按钮", e.nodes.mLang.style.display === "", ""]);
-  results.push(["弹窗保留了 CF 链接",
-                (e.nodes.mCf.href || "").includes("codeforces.com"), e.nodes.mCf.href]);
-
-  // 场景 F: 全都没有 → 弹窗给兜底链接
-  const f = run("", {});
-  await sleep(400);
-  const fc = f.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
-  fc.querySelector(".hit").fire("click", { preventDefault() {} });
-  await sleep(400);
-  results.push(["取不到题面时弹窗不白屏", f.nodes.mBody._html.includes("还没收录"), ""]);
-  results.push(["取不到题面时给了洛谷链接",
-                f.nodes.mBody._html.includes("luogu.com.cn/problem/"), ""]);
-  results.push(["不再使用 iframe 嵌套", !f.nodes.mBody._html.includes("<iframe"), ""]);
-
-  // 场景 G: 同源静态数据优先（在线接口完全不可用时也能读）
-  const g = run("", { local: live });
-  await sleep(400);
-  const gc = g.nodes.grid.children.find(x => x._html && x._html.includes("card-top"));
-  gc.querySelector(".hit").fire("click", { preventDefault() {} });
-  await sleep(400);
-  results.push(["仅有同源数据时也能渲染题面",
-                g.nodes.mBody._html.includes("题目描述") &&
-                g.nodes.mBody._html.includes("6 2 2"), ""]);
-  results.push(["同源数据路径不依赖在线接口",
-                g.nodes.mTitle.textContent === "The Walkway",
-                `"${g.nodes.mTitle.textContent}"`]);
+  // 场景 F: 快捷难度区间
+  results.push(["有 800 起步的快捷区间",
+                /data-lo="800"\s+data-hi="1000"/.test(html), ""]);
+  results.push(["快捷区间按钮齐全",
+                (html.match(/data-lo="\d+"/g) || []).length >= 6,
+                `HTML 里 ${(html.match(/data-lo="\d+"/g) || []).length} 个`]);
 
   console.log("=== DOM 端到端测试 ===");
   let ok = true;
