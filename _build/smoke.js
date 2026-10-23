@@ -115,10 +115,18 @@ console.log(`  不带账号 ${p1} 题 -> 排除 500 道已做后 ${p2} 题 (差 
 
 console.log("\n[断言]");
 const checks = [
-  ["schema 是 v3", data.v === 3],
-  ["数据不含 tags 字段", !("tags" in data)],
+  ["schema 是 v4", data.v === 4],
+  ["带标签字典（38 个）", Array.isArray(data.tags) && data.tags.length === 38],
   ["题库 > 10000", problems.length > 10000],
-  ["每行 5 个字段", data.p.every(r => r.length === 5)],
+  ["每行 6 个字段", data.p.every(r => r.length === 6)],
+  ["标签索引都合法", data.p.every(r => r[5].every(i => i >= 0 && i < data.tags.length))],
+  ["高位标签（trees）不串位", (() => {
+    const ti = data.tags.indexOf("trees");
+    const flows = data.tags.indexOf("flows");
+    const withTrees = data.p.filter(r => r[5].includes(ti)).length;
+    const withFlows = data.p.filter(r => r[5].includes(flows)).length;
+    return ti >= 32 && withTrees > 0 && withTrees !== withFlows;
+  })()],
   ["无非法 rating", badRating === 0],
   ["无非法题目 id", badId === 0],
   ["1200-1600 池非空", pool(1200, 1600).length > 0],

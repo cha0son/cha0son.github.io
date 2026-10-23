@@ -125,7 +125,26 @@
   .seg button:not(.on):hover{color:var(--text)}
 
   .row2{display:grid; grid-template-columns:1fr 1fr; gap:22px}
-  @media(max-width:720px){.row2{grid-template-columns:1fr}}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1.15fr; gap:22px}
+  @media(max-width:900px){.row3{grid-template-columns:1fr 1fr}}
+  @media(max-width:720px){
+    .row2,.row3{grid-template-columns:1fr}
+  }
+
+  /* 标签筛选（只在筛选区出现，卡片上不展示标签） */
+  .chips{display:flex; flex-wrap:wrap; gap:7px; max-height:150px; overflow-y:auto}
+  .chip{
+    padding:4px 11px; border-radius:99px; font-size:12.5px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+    transition:.14s; user-select:none; font-family:inherit;
+  }
+  .chip:hover{border-color:#40506a; color:var(--text)}
+  .chip.on{
+    background:linear-gradient(135deg,rgba(59,130,246,.28),rgba(34,211,238,.18));
+    border-color:#4a8cf7; color:#dbeafe; font-weight:600;
+  }
+  .chip .n{color:var(--dim); font-size:11px; margin-left:4px; font-variant-numeric:tabular-nums}
+  .chip.on .n{color:#93c5fd}
 
   /* handle */
   .handle-box{display:flex; gap:9px}
@@ -334,9 +353,29 @@
         <button data-lo="2000" data-hi="2400">2000–2400 竞赛</button>
         <button data-lo="2400" data-hi="3000">2400+ 硬核</button>
       </div>
+      <p class="hint" id="bandHint"></p>
     </div>
 
-    <div class="row2">
+    <!-- 标签筛选（只用来过滤，不在题目卡片上显示） -->
+    <div class="field">
+      <div class="field-head">
+        <span class="label">标签筛选（可选，命中任一即可）</span>
+        <button class="ghost" id="btnClearTags">清空</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="row3">
+      <!-- 我的 rating -->
+      <div class="field">
+        <div class="field-head"><span class="label">我的 rating</span></div>
+        <div class="handle-box">
+          <input id="myRating" type="number" min="800" max="3500" step="50"
+                 placeholder="如 1500" inputmode="numeric">
+        </div>
+        <p class="hint">填了就用它自动匹配练习难度；留空则用账号分析结果，再没有就按区间中点。</p>
+      </div>
+
       <!-- 挑战度 -->
       <div class="field">
         <div class="field-head"><span class="label">挑战度</span></div>
@@ -345,7 +384,7 @@
           <button data-c="mid" class="on">适中</button>
           <button data-c="hard">挑战</button>
         </div>
-        <p class="hint" id="challengeHint">目标难度落在区间内你的 rating 之上约 150 分。</p>
+        <p class="hint" id="challengeHint">目标难度落在你的水平之上约 150 分。</p>
       </div>
 
       <!-- handle -->
@@ -355,7 +394,7 @@
           <input id="handle" placeholder="例如 tourist" autocomplete="off" spellcheck="false">
           <button class="ghost" id="btnAnalyze">分析</button>
         </div>
-        <p class="hint">输入后自动排除你<b>已经通过</b>的题，并把目标难度对齐到你的 rating。提交记录只存在你自己的浏览器里。</p>
+        <p class="hint">输入后自动排除你<b>已经通过</b>的题，并从提交记录估算你的水平。记录只存在你自己的浏览器里。</p>
       </div>
     </div>
 
@@ -428,6 +467,10 @@ var state = {
   payload: null,
   readerSet: new Set(),
   problems: [],
+  tagDict: [],            // 标签名数组，下标即编号
+  tagIndex: new Map(),    // 标签名 -> 编号
+  sel: new Set(),         // 当前选中的标签名（只用于筛选，不显示在卡片上）
+  manualRating: null,     // 用户手输的 rating
   maxSolved: 1,
   minCid: 1,
   maxCid: 1,
@@ -476,8 +519,14 @@ function scheduleRender(){
 /* ---------------- 解码 ---------------- */
 function decode(payload){
   state.payload  = payload;
+  state.tagDict  = payload.tags || [];
+  state.tagIndex = new Map(state.tagDict.map(function(t, i){ return [t, i]; }));
+  // 兼容旧快照（无标签）：r[5] 不存在时给空数组
   state.problems = payload.p.map(function(r){
-    return { cid: r[0], idx: r[1], name: r[2], rating: r[3], solved: r[4] };
+    return {
+      cid: r[0], idx: r[1], name: r[2], rating: r[3], solved: r[4],
+      tags: r[5] || []
+    };
   });
   var mx = 1, mn = Infinity, mc = 0;
   for (var i = 0; i < state.problems.length; i++){
@@ -487,6 +536,51 @@ function decode(payload){
     if (p.cid < mn) mn = p.cid;
   }
   state.maxSolved = mx; state.maxCid = mc; state.minCid = mn;
+  renderChips();
+}
+
+/* ---------------- 标签筛选 UI ----------------
+   只做筛选，不在题目卡片上展示标签。
+   每个标签后面显示的人数按当前难度区间统计。
+------------------------------------------------ */
+function tagCounts(){
+  var c = new Array(state.tagDict.length);
+  for (var i = 0; i < c.length; i++) c[i] = 0;
+  for (var j = 0; j < state.problems.length; j++){
+    var p = state.problems[j];
+    if (p.rating < state.lo || p.rating > state.hi) continue;
+    for (var k = 0; k < p.tags.length; k++) c[p.tags[k]]++;
+  }
+  return c;
+}
+
+function renderChips(){
+  var box = $("chips");
+  if (!box) return;
+  var counts = tagCounts();
+  var order = state.tagDict
+    .map(function(t, i){ return { t: t, i: i, n: counts[i] }; })
+    .filter(function(x){ return x.n > 0 || state.sel.has(x.t); })
+    .sort(function(a, b){ return b.n - a.n; });
+
+  box.innerHTML = order.map(function(x){
+    var on = state.sel.has(x.t) ? " on" : "";
+    return '<button class="chip' + on + '" data-tag="' + esc(x.t) + '">' +
+      esc(x.t) + '<span class="n">' + fmt(x.n) + "</span></button>";
+  }).join("");
+}
+
+function refreshChipCounts(){
+  var box = $("chips");
+  if (!box) return;
+  var counts = tagCounts();
+  var btns = box.children;
+  for (var i = 0; i < btns.length; i++){
+    var name = btns[i].getAttribute("data-tag");
+    var idx = state.tagIndex.get(name);
+    var n = btns[i].querySelector(".n");
+    if (n && idx !== undefined) n.textContent = fmt(counts[idx]);
+  }
 }
 
 /* ---------------- 数据加载 ---------------- */
@@ -558,14 +652,24 @@ async function syncFromApi(silent){
     stats.set(s.contestId + s.index, s.solvedCount || 0);
   });
 
+  var tagSet = new Set();
+  j.result.problems.forEach(function(p){
+    (p.tags || []).forEach(function(t){ tagSet.add(t); });
+  });
+  var tags = Array.from(tagSet).sort();
+  var tidx = new Map(tags.map(function(t, i){ return [t, i]; }));
+
   var rows = [];
   j.result.problems.forEach(function(p){
     if (!p.rating || !p.contestId) return;
-    rows.push([p.contestId, p.index, p.name, p.rating, stats.get(p.contestId + p.index) || 0]);
+    var tl = (p.tags || []).map(function(t){ return tidx.get(t); })
+                           .sort(function(a, b){ return a - b; });
+    rows.push([p.contestId, p.index, p.name, p.rating,
+               stats.get(p.contestId + p.index) || 0, tl]);
   });
   rows.sort(function(a, b){ return a[0] - b[0] || (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0); });
 
-  var payload = { v: 3, gen: Math.floor(Date.now() / 1000), p: rows };
+  var payload = { v: 4, gen: Math.floor(Date.now() / 1000), tags: tags, p: rows };
   try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e){}
   decode(payload);
   finishLoad(payload.gen);
@@ -592,20 +696,85 @@ function quantile(sorted, q){
  */
 function targetRating(){
   var mid = (state.lo + state.hi) / 2;
-  var prof = state.profile;
-  if (!prof) return clamp(mid, state.lo, state.hi);
-  if (prof.est == null) return clamp(mid, state.lo, state.hi);
+  var base = effectiveLevel();
+  if (base == null) return clamp(mid, state.lo, state.hi);
 
   var delta = {easy: 0, mid: 150, hard: 300}[state.challenge];
-  return clamp(prof.est + delta, state.lo, state.hi);
+  return clamp(base + delta, state.lo, state.hi);
+}
+
+/**
+ * 当前「水平」来源，优先级：
+ *   1. 账号分析推出来的 est
+ *   2. 用户手输的 rating
+ *   3. null（不知道）
+ */
+function effectiveLevel(){
+  var prof = state.profile;
+  if (prof && prof.est != null) return prof.est;
+  if (state.manualRating != null) return state.manualRating;
+  return null;
+}
+
+/**
+ * 按水平算一个适合练习的难度带：下方留 100 缓冲，上方留 300 拔高。
+ * 1500 -> 1400-1800
+ */
+function autoBand(base){
+  var lo = Math.floor((base - 100) / 100) * 100;
+  var hi = Math.ceil((base + 300) / 100) * 100;
+  lo = clamp(lo, MIN_R, MAX_R - STEP);
+  hi = clamp(hi, lo + STEP, MAX_R);
+  return [lo, hi];
+}
+
+// 有水平信息就自动把区间调过去；返回是否应用
+function applyAutoBand(){
+  var base = effectiveLevel();
+  if (base == null){ updateBandHint(); return false; }
+  var band = autoBand(base);
+  state.lo = band[0];
+  state.hi = band[1];
+  $("lo").value = state.lo;
+  $("hi").value = state.hi;
+  paintSlider();
+  updateBandHint();
+  return true;
+}
+
+function updateBandHint(){
+  var el = $("bandHint");
+  if (!el) return;
+  var base = effectiveLevel();
+  var prof = state.profile;
+  var src;
+  if (base == null){
+    el.textContent = "还没有你的水平信息——填「我的 rating」或分析账号，就能自动匹配练习难度。";
+    return;
+  }
+  if (prof && prof.est != null){
+    src = prof.estSrc === "official" ? ("你的 rating " + prof.est) : ("估算水平 " + prof.est);
+  } else {
+    src = "你填的 rating " + base;
+  }
+  el.textContent = "已按" + src + " 自动匹配 " + state.lo + "–" + state.hi +
+                   "（可手动拖动滑块覆盖）";
 }
 
 function makeCtx(seed){
   var prof = state.profile;
+  var selIdx = new Set();
+  state.sel.forEach(function(t){
+    var i = state.tagIndex.get(t);
+    if (i !== undefined) selIdx.add(i);
+  });
+  var base = effectiveLevel();
   return {
     target: targetRating(),
+    level: base,
     profile: prof,
-    known: !!(prof && prof.est != null),
+    known: base != null,
+    selIdx: selIdx,
     maxAc: prof ? (prof.maxAc || 0) : 0,
     maxSolved: state.maxSolved,
     minCid: state.minCid,
@@ -623,6 +792,16 @@ function score(p, c){
   if (c.maxAc && p.rating > c.maxAc + 300) D *= 0.5;
   else if (c.maxAc && p.rating > c.maxAc + 200) D *= 0.75;
 
+  // 标签契合：选中标签时，命中越多排得越前（标签只在内部用于排序）
+  var T = 0.5;
+  if (c.selIdx.size && p.tags.length){
+    var hit = 0;
+    for (var i = 0; i < p.tags.length; i++){
+      if (c.selIdx.has(p.tags[i])) hit++;
+    }
+    T = Math.min(1, hit / Math.min(c.selIdx.size, 2));
+  }
+
   // 质量：通过数取对数归一
   var Q = Math.log1p(p.solved) / Math.log1p(Math.max(c.maxSolved, 2));
   // 新鲜度：contestId 越大越新
@@ -630,23 +809,24 @@ function score(p, c){
   // 抖动：让「换一批」真的换一批
   var J = hash(p.cid * 1000 + p.idx.charCodeAt(0) * 7 + (p.idx.charCodeAt(1) || 0), c.seed);
 
-  return 0.55 * D + 0.25 * Q + 0.10 * F + 0.10 * J;
+  return 0.50 * D + 0.10 * T + 0.22 * Q + 0.08 * F + 0.10 * J;
 }
 
 /* ---------------- 推荐理由 ---------------- */
 function reasons(p, c){
   var out = [];
   var prof = c.profile;
+  var lvl = c.level;
 
-  if (prof && prof.est != null){
-    var d = p.rating - prof.est;
-    if (Math.abs(d) <= 150) out.push("贴着你的水平 " + prof.est);
+  if (lvl != null){
+    var d = p.rating - lvl;
+    if (Math.abs(d) <= 150) out.push("贴着你的水平 " + lvl);
     else if (d > 0) out.push("比你的水平高 " + d + " 分");
     else out.push("低于你的水平 " + (-d) + " 分，巩固用");
 
-    if (prof.failed && prof.failed.has(p.cid + p.idx)){
+    if (prof && prof.failed && prof.failed.has(p.cid + p.idx)){
       out.push("你试过但没过，可以再战");
-    } else if (prof.maxAc && p.rating > prof.maxAc + 200){
+    } else if (prof && prof.maxAc && p.rating > prof.maxAc + 200){
       out.push("超出你 AC 过的最高题 " + (p.rating - prof.maxAc) + " 分");
     }
   } else if (prof){
@@ -667,22 +847,40 @@ function currentPool(){
   var lo = state.lo, hi = state.hi;
   var prof = state.profile;
 
+  var selIdx = new Set();
+  state.sel.forEach(function(t){
+    var i = state.tagIndex.get(t);
+    if (i !== undefined) selIdx.add(i);
+  });
+
   var pool = [];
   for (var i = 0; i < state.problems.length; i++){
     var p = state.problems[i];
     if (p.rating < lo || p.rating > hi) continue;
     if (prof && prof.solved.has(p.cid + p.idx)) continue;
+    // 标签筛选：命中任一选中标签即可
+    if (selIdx.size){
+      var hit = false;
+      for (var k = 0; k < p.tags.length; k++){
+        if (selIdx.has(p.tags[k])){ hit = true; break; }
+      }
+      if (!hit) continue;
+    }
     pool.push(p);
   }
   return pool;
 }
 
 function render(){
+  refreshChipCounts();
   var pool = currentPool();
   $("count").textContent = fmt(pool.length);
 
   if (!pool.length){
-    renderEmpty("没有符合条件的题目", "试试放宽难度区间，或者换个挑战度。");
+    renderEmpty("没有符合条件的题目",
+      state.sel.size
+        ? "选中的标签在当前难度区间里没有题，先把标签清掉或放宽难度。"
+        : "试试放宽难度区间，或者换个挑战度。");
     return;
   }
 
@@ -885,11 +1083,15 @@ async function analyze(){
 
     try {
       localStorage.setItem(LS_PREFS, JSON.stringify({
-        handle: info.handle, lo: state.lo, hi: state.hi, challenge: state.challenge
+        handle: info.handle, lo: state.lo, hi: state.hi,
+        rating: state.manualRating, challenge: state.challenge
       }));
     } catch(e){}
 
     renderProfile();
+    if (est != null) applyAutoBand();   // 有水平信息就自动匹配难度
+    else updateBandHint();
+    syncHash();
     render();
     toast("已分析 " + info.handle + "：读了 " + fmt(subs.length) + " 次提交，通过 " +
           fmt(solved.size) + " 道题" +
@@ -958,6 +1160,10 @@ function renderProfile(){
 /* ---------------- URL 状态 ---------------- */
 function syncHash(){
   var parts = ["lo=" + state.lo, "hi=" + state.hi, "c=" + state.challenge];
+  if (state.sel.size){
+    parts.push("t=" + Array.from(state.sel).map(encodeURIComponent).join(","));
+  }
+  if (state.manualRating != null) parts.push("r=" + state.manualRating);
   history.replaceState(null, "", "#" + parts.join("&"));
 }
 
@@ -968,6 +1174,16 @@ function readHash(){
   if (q.has("lo")) state.lo = clamp(+q.get("lo") || 1200, MIN_R, MAX_R - STEP);
   if (q.has("hi")) state.hi = clamp(+q.get("hi") || 1600, state.lo + STEP, MAX_R);
   if (q.has("c") && ["easy","mid","hard"].indexOf(q.get("c")) >= 0) state.challenge = q.get("c");
+  if (q.has("r")){
+    var r = +q.get("r");
+    if (r >= MIN_R && r <= MAX_R) state.manualRating = r;
+  }
+  if (q.has("t")){
+    q.get("t").split(",").forEach(function(t){
+      var name = decodeURIComponent(t);
+      if (state.tagIndex.has(name)) state.sel.add(name);
+    });
+  }
 }
 
 /* ---------------- 控件绑定 ---------------- */
@@ -997,12 +1213,12 @@ function bind(){
   lo.addEventListener("input", function(){
     state.lo = Math.min(+lo.value, state.hi - STEP);
     lo.value = state.lo;
-    paintSlider(); syncHash(); scheduleRender();
+    paintSlider(); updateBandHint(); syncHash(); scheduleRender();
   });
   hi.addEventListener("input", function(){
     state.hi = Math.max(+hi.value, state.lo + STEP);
     hi.value = state.hi;
-    paintSlider(); syncHash(); scheduleRender();
+    paintSlider(); updateBandHint(); syncHash(); scheduleRender();
   });
 
   $("seg").addEventListener("click", function(e){
@@ -1028,7 +1244,42 @@ function bind(){
     state.hi = +b.dataset.hi;
     $("lo").value = state.lo;
     $("hi").value = state.hi;
-    paintSlider(); syncHash(); render();
+    paintSlider(); updateBandHint(); syncHash(); render();
+  });
+
+  // 手输 rating：自动匹配练习难度
+  var myRating = $("myRating");
+  function onRatingInput(){
+    var v = parseInt(myRating.value, 10);
+    state.manualRating = (isFinite(v) && v >= MIN_R && v <= MAX_R) ? v : null;
+    if (state.manualRating != null) applyAutoBand();
+    else updateBandHint();
+    try {
+      localStorage.setItem(LS_PREFS, JSON.stringify({
+        handle: $("handle").value.trim() || null,
+        rating: state.manualRating,
+        challenge: state.challenge
+      }));
+    } catch(e){}
+    syncHash(); render();
+  }
+  myRating.addEventListener("input", onRatingInput);
+  myRating.addEventListener("change", onRatingInput);
+
+  // 标签筛选（只筛选，不在卡片上显示）
+  $("chips").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-tag]");
+    if (!b) return;
+    var t = b.getAttribute("data-tag");
+    if (state.sel.has(t)) state.sel.delete(t); else state.sel.add(t);
+    b.classList.toggle("on");
+    syncHash(); render();
+  });
+
+  $("btnClearTags").addEventListener("click", function(){
+    state.sel.clear();
+    renderChips();            // 重建，清除 on 状态
+    syncHash(); render();
   });
 
   $("sort").addEventListener("change", function(e){ state.sort = e.target.value; render(); });
@@ -1061,15 +1312,19 @@ async function main(){
   try {
     var prefs = JSON.parse(localStorage.getItem(LS_PREFS) || "null");
     if (prefs && prefs.handle) $("handle").value = prefs.handle;
+    if (prefs && typeof prefs.rating === "number") state.manualRating = prefs.rating;
   } catch(e){}
 
   readHash();
+  if (state.manualRating != null) $("myRating").value = state.manualRating;
   paintSlider();
   Array.prototype.forEach.call($("seg").children, function(x){
     x.classList.toggle("on", x.dataset.c === state.challenge);
   });
   $("lo").value = state.lo;
   $("hi").value = state.hi;
+  renderChips();
+  updateBandHint();
   if (state.problems.length) render();
   $("sort").value = state.sort;
 

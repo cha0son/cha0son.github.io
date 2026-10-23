@@ -194,6 +194,38 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
                 (html.match(/data-lo="\d+"/g) || []).length >= 6,
                 `HTML 里 ${(html.match(/data-lo="\d+"/g) || []).length} 个`]);
 
+  // 场景 F2: 标签筛选（只过滤，卡片上不显示标签）
+  const noTag = run("", {});
+  await sleep(400);
+  const baseCount = noTag.nodes.count.textContent;
+
+  const withTag = run("#lo=1400&hi=1600&t=dp", {});
+  await sleep(400);
+  const tagCount = withTag.nodes.count.textContent;
+  results.push(["标签筛选生效（结果变少）",
+                parseInt(tagCount.replace(/,/g, ""), 10) <
+                parseInt(baseCount.replace(/,/g, ""), 10),
+                `${baseCount} -> ${tagCount}`]);
+  const tagCards = withTag.nodes.grid.children.filter(x => x._html && x._html.includes("card-top"));
+  results.push(["筛选后仍有题", tagCards.length > 0, `实际 ${tagCards.length}`]);
+  results.push(["卡片上不显示标签",
+                tagCards.every(x => !x._html.includes('class="tags"')), ""]);
+  results.push(["标签筛选区渲染出 chip",
+                /data-tag="/.test(withTag.nodes.chips._html), ""]);
+
+  // 场景 F3: 手输 rating → 自动匹配难度带（1500 -> 1400-1800）
+  const rt = run("", {});
+  await sleep(400);
+  rt.nodes.myRating.value = "1500";
+  rt.nodes.myRating.fire("input");
+  await sleep(300);
+  results.push(["填 rating 后自动匹配难度带",
+                rt.nodes.rangeLabel.textContent === "1400 – 1800",
+                `"${rt.nodes.rangeLabel.textContent}"`]);
+  results.push(["难度提示写明依据",
+                /1500/.test(rt.nodes.bandHint.textContent),
+                `"${rt.nodes.bandHint.textContent}"`]);
+
   // 场景 G: 未定级但有过题记录 → 必须按记录估算，不能瞎套 1200
   const subsLow = [
     { verdict: "OK", problem: { contestId: 1, index: "A", rating: 800 } },

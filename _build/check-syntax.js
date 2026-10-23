@@ -29,19 +29,22 @@ const must = [
   ["双滑条 #hi", /id="hi"/, html],
   ["结果网格", /id="grid"/, html],
   ["handle 输入", /id="handle"/, html],
+  ["手输 rating", /id="myRating"/, html],
+  ["难度提示 #bandHint", /id="bandHint"/, html],
+  ["标签筛选容器", /id="chips"/, html],
+  ["标签清空按钮", /id="btnClearTags"/, html],
   ["每日一题按钮", /id="btnDaily"/, html],
   ["旧版主页链接", /index\.v1\.html/, html],
   ["调用 CF API", /problemset\.problems/, html],
+  ["标签索引用数组不是位掩码", /tags: r\[5\]/, html],
 ];
 
-// 标签功能已按需求整套移除，这些标识不该再出现
+// 这些是实现层面的约束，必须不出现
 const mustNot = [
-  ["标签容器 #chips", /id="chips"/],
-  ["标签 chip 样式", /\.chip\s*\{/],
-  ["标签筛选逻辑", /state\.sel\b/],
-  ["标签字典", /tagDict/],
-  ["标签位运算", /\.mask\b/],
-  ["补短板文案", /补短板/],
+  ["标签位运算掩码", /\.mask\b/],
+  ["iframe 嵌套", /<iframe/],
+  ["卡片上显示标签", /class="tags"/],
+  ["旧的 1200 兜底", /rating \|\| 1200/],
 ];
 
 let ok = true;
@@ -52,7 +55,7 @@ for (const [name, re, src] of must) {
 }
 for (const [name, re] of mustNot) {
   const pass = !re.test(html);
-  console.log(`  ${pass ? "PASS" : "FAIL"}  已移除: ${name}`);
+  console.log(`  ${pass ? "PASS" : "FAIL"}  不应出现: ${name}`);
   if (!pass) ok = false;
 }
 
