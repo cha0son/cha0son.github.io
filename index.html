@@ -3,1345 +3,310 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CF 题目推荐器 · cha0son</title>
-<meta name="description" content="按难度区间筛选 Codeforces 题目，支持账号已通过排除与每日一题。纯前端，数据来自 Codeforces 官方 API。">
-<meta name="theme-color" content="#0b0d10">
-<meta property="og:type" content="website">
-<meta property="og:title" content="CF 题目推荐器">
-<meta property="og:description" content="指定难度区间挑 Codeforces 题目">
-<meta property="og:url" content="https://cha0son.github.io/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0d10'/%3E%3Ctext x='32' y='45' font-size='34' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%233b82f6'%3ECF%3C/text%3E%3C/svg%3E">
+<title>chaoson · 个人主页</title>
+<meta name="description" content="吉林大学软件工程本科生 · Java 后端方向 · 算法竞赛选手">
 <style>
   :root{
-    --bg:#0b0d10; --surface:#14171c; --surface2:#1b1f26; --border:#262b34;
-    --text:#e6e9ef; --muted:#8b93a1; --dim:#5d6470;
-    --accent:#3b82f6; --radius:14px;
+    --bg:#0f1115; --panel:#161a21; --panel2:#1c222b; --line:#252c37;
+    --text:#e8edf5; --muted:#8b98ab; --accent:#4d9fff; --accent2:#6ee7b7;
+    --warn:#ffb84d;
+    --maxw:980px;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
   body{
-    background:var(--bg); color:var(--text);
-    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased; min-height:100vh;
+    background:var(--bg);color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,system-ui,sans-serif;
+    line-height:1.75;-webkit-font-smoothing:antialiased;
   }
-  a{color:inherit;text-decoration:none}
-  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
-  input,select{font:inherit;color:inherit}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 
-  /* ---------- 顶部 ---------- */
-  .hero{
-    position:relative; overflow:hidden;
-    padding:44px 24px 30px; text-align:center;
-    border-bottom:1px solid var(--border);
+  /* ---------- 顶部导航 ---------- */
+  header{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(15,17,21,.82);border-bottom:1px solid var(--line);
   }
-  .hero::before{
-    content:""; position:absolute; inset:-60% 0 auto; height:140%;
-    background:radial-gradient(600px 260px at 50% 0%,rgba(59,130,246,.20),transparent 70%),
-               radial-gradient(420px 200px at 82% 10%,rgba(34,211,238,.10),transparent 70%);
-    pointer-events:none;
-  }
-  .hero > *{position:relative}
-  h1{
-    margin:0 0 10px; font-size:clamp(26px,4.4vw,38px); letter-spacing:-.6px;
-    background:linear-gradient(92deg,#fff 15%,#9ec5ff 55%,#8be9fd 95%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .sub{margin:0 auto; max-width:640px; color:var(--muted); font-size:14.5px}
-  .sub code{background:var(--surface2);padding:1px 6px;border-radius:5px;font-size:12.5px;color:#a9c7ff}
-  .hero-meta{
-    margin-top:18px; display:flex; gap:10px; justify-content:center; align-items:center;
-    flex-wrap:wrap; font-size:12.5px; color:var(--dim);
-  }
-  .dot{width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:5px;
-       box-shadow:0 0 8px #22c55e}
-  .dot.warn{background:#f59e0b;box-shadow:0 0 8px #f59e0b}
-  .dot.err{background:#ef4444;box-shadow:0 0 8px #ef4444}
+  header .wrap{display:flex;align-items:center;gap:20px;height:56px}
+  .logo{font-weight:700;letter-spacing:.5px;font-size:15px}
+  .logo span{color:var(--accent)}
+  nav{margin-left:auto;display:flex;gap:20px;font-size:14px}
+  nav a{color:var(--muted)}
+  nav a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:640px){nav{display:none}}
 
-  /* ---------- 通用按钮 ---------- */
-  .ghost{
-    padding:6px 13px; border-radius:9px; border:1px solid var(--border);
-    background:var(--surface); color:var(--text); font-size:12.5px; transition:.16s;
-  }
-  .ghost:hover{border-color:#3b4c66;background:var(--surface2)}
-  .ghost:disabled{opacity:.45;cursor:not-allowed}
-  .primary{
-    padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;
-    background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff;
-    box-shadow:0 4px 16px rgba(37,99,235,.32); transition:.16s;
-  }
-  .primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.42)}
-
-  /* ---------- 控制面板 ---------- */
-  .wrap{max-width:1180px; margin:0 auto; padding:26px 24px 70px}
-  .panel{
-    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    padding:22px 24px; display:grid; gap:22px;
-  }
-  .field{display:grid; gap:10px}
-  .field-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
-  .label{font-size:12px; font-weight:600; letter-spacing:.9px; text-transform:uppercase; color:var(--dim)}
-  .val{font-variant-numeric:tabular-nums; font-size:15px; font-weight:700; color:#cfe0ff}
-
-  /* 双滑条 */
-  .slider{position:relative; height:30px; display:flex; align-items:center}
-  .rail,.fill{position:absolute; height:6px; border-radius:99px}
-  .rail{left:0;right:0;background:#252a33}
-  .fill{background:linear-gradient(90deg,#3b82f6,#22d3ee)}
-  .slider input[type=range]{
-    position:absolute; left:0; width:100%; height:30px; margin:0;
-    -webkit-appearance:none; appearance:none; background:transparent; pointer-events:none;
-  }
-  .slider input[type=range]:focus{outline:none}
-  .slider input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; pointer-events:auto; width:18px; height:18px; border-radius:50%;
-    background:#eef2f8; border:2.5px solid #3b82f6; cursor:grab;
-    box-shadow:0 2px 10px rgba(0,0,0,.55); transition:transform .1s;
-  }
-  .slider input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.14)}
-  .slider input[type=range]::-moz-range-thumb{
-    pointer-events:auto; width:14px; height:14px; border-radius:50%;
-    background:#eef2f8; border:2.5px solid #3b82f6; cursor:grab;
-    box-shadow:0 2px 10px rgba(0,0,0,.55);
-  }
-  .ticks{display:flex; justify-content:space-between; font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums}
-
-  /* 快捷难度区间 */
-  .presets{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px}
-  .presets button{
-    padding:4px 11px; border-radius:99px; font-size:12px; cursor:pointer;
-    background:var(--surface2); border:1px solid var(--border); color:var(--muted);
-    transition:.14s; font-variant-numeric:tabular-nums;
-  }
-  .presets button:hover{border-color:#40506a; color:var(--text)}
-  .presets button.on{
-    background:linear-gradient(135deg,rgba(59,130,246,.28),rgba(34,211,238,.18));
-    border-color:#4a8cf7; color:#dbeafe; font-weight:600;
-  }
-
-  /* 分段控件 */
-  .seg{display:inline-flex; padding:3px; gap:3px; background:var(--surface2); border-radius:10px; border:1px solid var(--border)}
-  .seg button{padding:6px 15px; border-radius:8px; font-size:13px; color:var(--muted); transition:.14s}
-  .seg button.on{background:#2a3444; color:#dbeafe; font-weight:600; box-shadow:0 1px 6px rgba(0,0,0,.35)}
-  .seg button:not(.on):hover{color:var(--text)}
-
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:22px}
-  .row3{display:grid; grid-template-columns:1fr 1fr 1.15fr; gap:22px}
-  @media(max-width:900px){.row3{grid-template-columns:1fr 1fr}}
-  @media(max-width:720px){
-    .row2,.row3{grid-template-columns:1fr}
-  }
-
-  /* 标签筛选（只在筛选区出现，卡片上不展示标签） */
-  .chips{display:flex; flex-wrap:wrap; gap:7px; max-height:150px; overflow-y:auto}
+  /* ---------- Hero ---------- */
+  .hero{padding:78px 0 58px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 400px at 12% -20%,rgba(77,159,255,.13),transparent 65%)}
+  .hero h1{font-size:44px;letter-spacing:-.5px;margin-bottom:10px;line-height:1.25}
+  .hero .tag{font-size:17px;color:var(--muted);margin-bottom:22px}
+  .hero .tag b{color:var(--accent2);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
   .chip{
-    padding:4px 11px; border-radius:99px; font-size:12.5px; cursor:pointer;
-    border:1px solid var(--border); background:var(--surface2); color:var(--muted);
-    transition:.14s; user-select:none; font-family:inherit;
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    font-size:13px;padding:5px 13px;border-radius:999px;
   }
-  .chip:hover{border-color:#40506a; color:var(--text)}
-  .chip.on{
-    background:linear-gradient(135deg,rgba(59,130,246,.28),rgba(34,211,238,.18));
-    border-color:#4a8cf7; color:#dbeafe; font-weight:600;
+  .chip.hi{border-color:rgba(77,159,255,.4);color:var(--accent);background:rgba(77,159,255,.08)}
+  .links{display:flex;flex-wrap:wrap;gap:11px}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--accent);color:#07131f;font-weight:600;font-size:14px;
+    padding:10px 21px;border-radius:9px;transition:.18s;
   }
-  .chip .n{color:var(--dim); font-size:11px; margin-left:4px; font-variant-numeric:tabular-nums}
-  .chip.on .n{color:#93c5fd}
+  .btn:hover{transform:translateY(-2px);text-decoration:none;filter:brightness(1.08)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:500}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
 
-  /* handle */
-  .handle-box{display:flex; gap:9px}
-  .handle-box input{
-    flex:1; min-width:0; padding:10px 13px; border-radius:10px;
-    background:var(--surface2); border:1px solid var(--border); outline:none; transition:.14s;
-  }
-  .handle-box input:focus{border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.14)}
-  .handle-box input::placeholder{color:var(--dim)}
-  .hint{font-size:12px; color:var(--dim); line-height:1.55; margin:0}
-  .hint b{color:#93c5fd; font-weight:600}
+  /* ---------- 通用区块 ---------- */
+  section{padding:54px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:none}
+  h2{font-size:21px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  h2:before{content:"";width:3px;height:19px;background:var(--accent);border-radius:2px}
+  .lead{color:var(--muted);font-size:14.5px;margin-bottom:26px}
 
-  .profile{
-    display:none; gap:16px; flex-wrap:wrap; align-items:center;
-    padding:13px 16px; border-radius:11px; font-size:13px;
-    background:linear-gradient(135deg,rgba(59,130,246,.10),rgba(34,211,238,.05));
-    border:1px solid #2b3a52;
-  }
-  .profile.show{display:flex}
-  .profile .handle{font-weight:700; color:#dbeafe}
-  .profile .k{color:var(--dim); font-size:12px}
-  .profile .v{font-weight:700; font-variant-numeric:tabular-nums}
+  /* ---------- 技能 ---------- */
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px}
+  .sk{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:19px}
+  .sk h3{font-size:15px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .sk .lvl{font-size:11px;color:var(--accent);background:rgba(77,159,255,.1);
+    padding:2px 8px;border-radius:5px;font-weight:500}
+  .sk p{font-size:13.5px;color:var(--muted);margin-top:9px;line-height:1.85}
+  .sk .k{color:var(--text)}
 
-  /* ---------- 结果区 ---------- */
-  .results-head{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:14px; flex-wrap:wrap; margin:30px 0 16px;
-  }
-  .count{font-size:14px; color:var(--muted)}
-  .count b{color:#dbeafe; font-size:19px; font-variant-numeric:tabular-nums; margin-right:3px}
-  .tools{display:flex; gap:9px; align-items:center; flex-wrap:wrap}
-  select{
-    padding:7px 11px; border-radius:9px; background:var(--surface);
-    border:1px solid var(--border); font-size:12.5px; outline:none; cursor:pointer;
-  }
-  select:focus{border-color:#3b82f6}
+  /* ---------- 项目 ---------- */
+  .proj{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px;margin-bottom:16px;transition:.2s}
+  .proj:hover{border-color:rgba(77,159,255,.35)}
+  .proj h3{font-size:18px;margin-bottom:7px}
+  .proj .meta{font-size:12.5px;color:var(--muted);margin-bottom:13px}
+  .proj p{font-size:14px;color:#c3ccda;margin-bottom:15px}
+  .proj ul{list-style:none;font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .proj ul li{padding-left:17px;position:relative;margin-bottom:6px;line-height:1.8}
+  .proj ul li:before{content:"▹";position:absolute;left:0;color:var(--accent)}
+  .proj ul li b{color:var(--text);font-weight:600}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tags span{font-size:12px;background:var(--panel2);border:1px solid var(--line);
+    color:var(--muted);padding:3px 10px;border-radius:6px}
 
-  .grid{
-    display:grid; gap:14px;
-    grid-template-columns:repeat(auto-fill,minmax(275px,1fr));
-  }
-  .card{
-    position:relative; display:flex; flex-direction:column; gap:10px;
-    padding:16px 17px; border-radius:13px;
-    background:var(--surface); border:1px solid var(--border);
-    transition:transform .16s, border-color .16s, box-shadow .16s;
-    overflow:hidden;
-  }
-  .card::after{
-    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
-    background:var(--c,#3b82f6); opacity:.85;
-  }
-  .card:hover{
-    transform:translateY(-3px); border-color:#3b4c66;
-    box-shadow:0 10px 28px rgba(0,0,0,.45);
-  }
-  .card-top{display:flex; align-items:center; justify-content:space-between; gap:8px}
-  .badge{
-    font-size:12px; font-weight:800; font-variant-numeric:tabular-nums;
-    color:var(--c); padding:2px 8px; border-radius:6px;
-    background:color-mix(in srgb,var(--c) 15%,transparent);
-    border:1px solid color-mix(in srgb,var(--c) 40%,transparent);
-  }
-  .cidx{font-size:11.5px; color:var(--dim); font-variant-numeric:tabular-nums; letter-spacing:.4px}
-  .card h3{
-    margin:0; font-size:15px; line-height:1.4; font-weight:600;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-  }
-  .card:hover h3{color:#bfdbfe}
-  /* 整卡可点：用一张透明链接铺满整张卡，CF 直达链接浮在它上面 */
-  .card .hit{position:absolute; inset:0; z-index:1; border-radius:13px}
-  .card .cf{
-    position:relative; z-index:2; font-size:11.5px; color:#5b8dd6;
-    padding:0 3px; border-radius:4px; transition:.14s;
-  }
-  .card .cf:hover{color:#9ec5ff; background:rgba(59,130,246,.14)}
-  .badge-local{
-    font-size:10.5px; padding:1px 7px; border-radius:5px; font-weight:600;
-    background:rgba(34,197,94,.14); color:#4ade80; border:1px solid rgba(34,197,94,.35);
-  }
-  .why{
-    font-size:11.5px; line-height:1.5; color:#8290a4;
-    padding-top:9px; border-top:1px dashed #232830; margin-top:auto;
-  }
-  .foot{
-    display:flex; justify-content:space-between; align-items:center;
-    font-size:11.5px; color:var(--dim); font-variant-numeric:tabular-nums;
-  }
-  .foot .go{color:#5b8dd6; opacity:0; transition:.16s}
-  .card:hover .foot .go{opacity:1}
+  /* ---------- 时间线 ---------- */
+  .tl{border-left:2px solid var(--line);padding-left:24px;margin-left:5px}
+  .tl .item{position:relative;padding-bottom:26px}
+  .tl .item:last-child{padding-bottom:0}
+  .tl .item:before{content:"";position:absolute;left:-31px;top:8px;width:9px;height:9px;
+    border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+  .tl h3{font-size:15.5px;margin-bottom:3px}
+  .tl .when{font-size:12.5px;color:var(--accent);margin-bottom:6px}
+  .tl p{font-size:13.5px;color:var(--muted)}
 
-  /* 空态 / 骨架 */
-  .empty{
-    grid-column:1/-1; text-align:center; padding:56px 20px; color:var(--muted);
-    border:1px dashed var(--border); border-radius:var(--radius);
-  }
-  .empty h4{margin:0 0 8px; color:var(--text); font-size:16px}
-  .empty p{margin:0; font-size:13.5px}
-  .skel{
-    height:150px; border-radius:13px; background:var(--surface); border:1px solid var(--border);
-    position:relative; overflow:hidden;
-  }
-  .skel::after{
-    content:""; position:absolute; inset:0;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.045),transparent);
-    animation:sh 1.3s infinite;
-  }
-  @keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  /* ---------- 联系 ---------- */
+  .contact{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .ct{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:16px 19px;transition:.18s;display:block}
+  .ct:hover{border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
+  .ct .k{font-size:12px;color:var(--muted);margin-bottom:3px}
+  .ct .v{font-size:14px;color:var(--text)}
 
-  .banner{
-    display:none; align-items:center; gap:10px; margin-bottom:16px;
-    padding:13px 17px; border-radius:11px; font-size:13.5px;
-    background:linear-gradient(135deg,rgba(59,130,246,.14),rgba(34,211,238,.07));
-    border:1px solid #2b3a52; color:#dbeafe;
-  }
-  .banner.show{display:flex}
+  footer{padding:34px 0 44px;color:var(--muted);font-size:13px;text-align:center}
+  footer .tip{margin-top:9px;font-size:12px;color:#5b6675}
 
-  /* ---------- 读题弹窗 ---------- */
-  .modal{
-    position:fixed; inset:0; z-index:80; display:none;
-    background:rgba(0,0,0,.72); backdrop-filter:blur(3px);
-    padding:24px; overflow:auto;
-  }
-  .modal.show{display:flex; align-items:flex-start; justify-content:center}
-  .modal-box{
-    width:100%; max-width:860px; background:var(--bg);
-    border:1px solid var(--border); border-radius:16px;
-    box-shadow:0 24px 70px rgba(0,0,0,.7); overflow:hidden;
-    margin:auto;
-  }
-  .modal-head{
-    position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:10px;
-    padding:13px 18px; background:var(--surface); border-bottom:1px solid var(--border);
-  }
-  .modal-head .t{font-weight:700; font-size:14px; flex:1; min-width:0;
-                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .modal-body{padding:22px 26px 30px; max-height:none}
-  @media(max-width:720px){
-    .modal{padding:0}
-    .modal-box{border-radius:0; min-height:100vh}
-    .modal-body{padding:18px 16px 40px}
-  }
-  .modal .md p{margin:0 0 13px}
-  .modal .md ul,.modal .md ol{margin:0 0 13px; padding-left:24px}
-  .modal .md li{margin:4px 0}
-  .modal .md pre{background:var(--surface2); border:1px solid var(--border);
-                 border-radius:8px; padding:10px 12px; overflow-x:auto; font-size:13px}
-  .modal .md code{background:var(--surface2); padding:1px 5px; border-radius:4px;
-                  font-family:ui-monospace,Consolas,monospace; font-size:.92em}
-  .modal .md pre code{background:none; padding:0}
-  .modal h4{margin:0 0 8px; font-size:11px; letter-spacing:1px;
-            text-transform:uppercase; color:var(--dim)}
-  .modal .samples{display:grid; gap:12px}
-
-  /* toast */
-  #toast{
-    position:fixed; left:50%; bottom:30px; transform:translate(-50%,20px);
-    padding:11px 20px; border-radius:11px; font-size:13.5px;
-    background:#1e2632; border:1px solid #33405a; color:#e6e9ef;
-    box-shadow:0 10px 34px rgba(0,0,0,.6); opacity:0; pointer-events:none;
-    transition:.22s; z-index:99; max-width:min(90vw,460px); text-align:center;
-  }
-  #toast.show{opacity:1; transform:translate(-50%,0)}
-  #toast.err{border-color:#7f2d2d; background:#2a1a1a}
-
-  footer{
-    border-top:1px solid var(--border); margin-top:50px; padding:26px 24px 40px;
-    text-align:center; font-size:12.5px; color:var(--dim); line-height:2;
-  }
-  footer a{color:#6b8fc4}
-  footer a:hover{color:#9ec5ff; text-decoration:underline}
+  /* ---------- 滚动淡入 ---------- */
+  .fade{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s ease}
+  .fade.in{opacity:1;transform:none}
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <h1>CF 题目推荐器</h1>
-  <p class="sub">指定难度区间，按热度与新鲜度挑题。纯前端运行，数据来自 Codeforces 官方 API（<code>problemset.problems</code>）。</p>
-  <div class="hero-meta">
-    <span><span class="dot" id="dot"></span><span id="statusText">正在加载题库…</span></span>
-    <button class="ghost" id="btnSync" title="从 Codeforces API 拉取最新题库">同步最新题库</button>
-    <a class="ghost" href="compiler/" title="在线编译运行 C++17 / C11 / Python 3 / Java 17 / Node 22">在线编译器 →</a>
+<header>
+  <div class="wrap">
+    <div class="logo">chaoson<span>.</span></div>
+    <nav>
+      <a href="#about">关于</a>
+      <a href="#skills">技能</a>
+      <a href="#projects">项目</a>
+      <a href="#exp">经历</a>
+      <a href="#contact">联系</a>
+      <a href="recommender.html">CF 推荐器</a>
+      <a href="compiler/">在线编译器</a>
+    </nav>
   </div>
 </header>
 
-<div class="wrap">
-
-  <section class="panel">
-    <!-- 难度区间 -->
-    <div class="field">
-      <div class="field-head">
-        <span class="label">难度区间</span>
-        <span class="val" id="rangeLabel">1200 – 1600</span>
-      </div>
-      <div class="slider">
-        <div class="rail"></div>
-        <div class="fill" id="fill"></div>
-        <input type="range" id="lo" min="800" max="3500" step="100" value="1200" aria-label="最低难度">
-        <input type="range" id="hi" min="800" max="3500" step="100" value="1600" aria-label="最高难度">
-      </div>
-      <div class="ticks"><span>800</span><span>1500</span><span>2200</span><span>2900</span><span>3500</span></div>
-      <div class="presets" id="presets">
-        <button data-lo="800"  data-hi="1000">800–1000 入门</button>
-        <button data-lo="1000" data-hi="1400">1000–1400 基础</button>
-        <button data-lo="1200" data-hi="1600">1200–1600 常见</button>
-        <button data-lo="1600" data-hi="2000">1600–2000 提高</button>
-        <button data-lo="2000" data-hi="2400">2000–2400 竞赛</button>
-        <button data-lo="2400" data-hi="3000">2400+ 硬核</button>
-      </div>
-      <p class="hint" id="bandHint"></p>
+<!-- ==================== Hero ==================== -->
+<div class="hero">
+  <div class="wrap">
+    <h1>chaoson</h1>
+    <div class="tag">
+      吉林大学 · 软件工程本科生 · <b>Java 后端方向</b> · 算法竞赛选手
     </div>
-
-    <!-- 标签筛选（只用来过滤，不在题目卡片上显示） -->
-    <div class="field">
-      <div class="field-head">
-        <span class="label">标签筛选（可选，命中任一即可）</span>
-        <button class="ghost" id="btnClearTags">清空</button>
-      </div>
-      <div class="chips" id="chips"></div>
+    <div class="chips">
+      <span class="chip hi">Java / Spring Boot</span>
+      <span class="chip hi">算法与数据结构</span>
+      <span class="chip">C++ / Qt</span>
+      <span class="chip">MySQL / Redis</span>
+      <span class="chip">Docker</span>
+      <span class="chip">Linux</span>
     </div>
-
-    <div class="row3">
-      <!-- 我的 rating -->
-      <div class="field">
-        <div class="field-head"><span class="label">我的 rating</span></div>
-        <div class="handle-box">
-          <input id="myRating" type="number" min="800" max="3500" step="50"
-                 placeholder="如 1500" inputmode="numeric">
-        </div>
-        <p class="hint">填了就用它自动匹配练习难度；留空则用账号分析结果，再没有就按区间中点。</p>
-      </div>
-
-      <!-- 挑战度 -->
-      <div class="field">
-        <div class="field-head"><span class="label">挑战度</span></div>
-        <div class="seg" id="seg">
-          <button data-c="easy">轻松</button>
-          <button data-c="mid" class="on">适中</button>
-          <button data-c="hard">挑战</button>
-        </div>
-        <p class="hint" id="challengeHint">目标难度落在你的水平之上约 150 分。</p>
-      </div>
-
-      <!-- handle -->
-      <div class="field">
-        <div class="field-head"><span class="label">Codeforces 账号（可选）</span></div>
-        <div class="handle-box">
-          <input id="handle" placeholder="例如 tourist" autocomplete="off" spellcheck="false">
-          <button class="ghost" id="btnAnalyze">分析</button>
-        </div>
-        <p class="hint">输入后自动排除你<b>已经通过</b>的题，并从提交记录估算你的水平。记录只存在你自己的浏览器里。</p>
-      </div>
-    </div>
-
-    <div class="profile" id="profile"></div>
-  </section>
-
-  <div class="banner" id="banner"></div>
-
-  <div class="results-head">
-    <span class="count"><b id="count">0</b>题符合条件</span>
-    <div class="tools">
-      <select id="sort">
-        <option value="score">推荐排序</option>
-        <option value="solved">通过数最多</option>
-        <option value="rating-asc">难度从低到高</option>
-        <option value="rating-desc">难度从高到低</option>
-        <option value="new">最新题目</option>
-      </select>
-      <button class="ghost" id="btnShuffle">换一批</button>
-      <button class="primary" id="btnDaily">每日一题</button>
+    <div class="links">
+      <a class="btn" href="#projects">看我的项目</a>
+      <a class="btn ghost" href="https://github.com/cha0son" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn ghost" href="recommender.html">CF 题目推荐器</a>
+      <a class="btn ghost" href="compiler/">在线编译器</a>
     </div>
   </div>
-
-  <div class="grid" id="grid"></div>
 </div>
 
-<footer>
-  数据来源 <a href="https://codeforces.com/apiHelp" target="_blank" rel="noopener">Codeforces 官方 API</a> ·
-  题库版权归 Codeforces 及各题作者所有，本站只缓存元数据并跳转原题 ·
-  <a href="https://github.com/cha0son/cha0son.github.io" target="_blank" rel="noopener">源码</a> ·
-  <a href="compiler/">在线编译器</a> ·
-  <a href="reader/">离线题单</a> ·
-  <a href="index.v1.html">旧版主页</a><br>
-  <span id="footMeta"></span>
+<main class="wrap">
+
+  <!-- ==================== 关于 ==================== -->
+  <section id="about" class="fade">
+    <h2>关于我</h2>
+    <p class="lead">一个喜欢把算法用起来的人</p>
+    <p style="font-size:14.5px;color:#c3ccda;max-width:760px">
+      吉林大学软件工程专业本科生，主攻 Java 后端开发。有算法竞赛训练经历，
+      习惯用「量化指标 + 对比实验」的方式验证方案，而不只是让代码跑起来。
+      最近在做推荐系统方向的个人项目，把兴趣衰减、加权打分这些算法真正落地成了能用的东西。
+    </p>
+  </section>
+
+  <!-- ==================== 技能 ==================== -->
+  <section id="skills" class="fade">
+    <h2>技能</h2>
+    <p class="lead">按熟练度排列</p>
+    <div class="skills">
+
+      <div class="sk">
+        <h3>Java 后端 <span class="lvl">主力</span></h3>
+        <p>
+          <span class="k">Spring Boot</span> 分层架构、RESTful 接口设计<br>
+          <span class="k">MyBatis</span> 手写 SQL、索引优化<br>
+          <span class="k">MySQL</span> 事务、索引、慢查询分析<br>
+          <span class="k">Redis</span> 缓存、分布式锁、ZSet 排行榜
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>算法与数据结构 <span class="lvl">竞赛训练</span></h3>
+        <p>
+          <span class="k">图论</span> 最短路、网络流、树上问题<br>
+          <span class="k">计算几何</span> 凸包、半平面交、旋转卡壳<br>
+          <span class="k">数据结构</span> 线段树、树状数组、平衡树<br>
+          <span class="k">字符串</span> 哈希、KMP、Z 函数
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>C++ / 桌面开发</h3>
+        <p>
+          <span class="k">C++11/17</span> STL、面向对象、模板<br>
+          <span class="k">Qt</span> 信号槽、界面开发基础<br>
+          竞赛主力语言，熟悉性能与内存考量
+        </p>
+      </div>
+
+      <div class="sk">
+        <h3>工程工具</h3>
+        <p>
+          <span class="k">Git</span> 分支管理与协作<br>
+          <span class="k">Docker</span> 容器化部署、资源隔离<br>
+          <span class="k">Linux</span> 常用命令、服务部署<br>
+          <span class="k">Maven</span> 依赖管理
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 项目 ==================== -->
+  <section id="projects" class="fade">
+    <h2>项目</h2>
+    <p class="lead">全部是个人项目，代码都在 GitHub 上</p>
+
+    <div class="proj">
+      <h3>每日饮食推荐系统</h3>
+      <div class="meta">个人项目 · Java · 2026.10</div>
+      <p>
+        一个加权打分 + 时间衰减的推荐引擎。解决的核心问题是「怎么让推荐既符合口味、
+        又不重复」。不是套壳调包，打分公式、衰减模型、评估脚本都是自己设计实现的。
+      </p>
+      <ul>
+        <li>设计打分模型 <b>score = α·偏好分 + β·时间分 + γ·场景分 − 惩罚分 + 噪声</b>，各项权重可配置</li>
+        <li>用 <b>1 − exp(−Δt/λ)</b> 建模「想念程度」回升曲线，并按菜系个性化半衰期 λ</li>
+        <li>实现<b>候选池自适应</b>：过滤条件导致候选集为空时逐级放宽，而不是直接报错</li>
+        <li>做消融实验验证时间衰减的贡献：<b>β=0.30 时两菜分差 0.091，β=0 时完全持平</b></li>
+        <li>自建 82 道菜品库，前端提供打分、历史、参数实时调节</li>
+      </ul>
+      <div class="tags">
+        <span>Java</span><span>推荐算法</span><span>时间衰减</span>
+        <span>HTTP Server</span><span>原生 JS</span>
+      </div>
+    </div>
+
+    </section>
+
+  <!-- ==================== 经历 ==================== -->
+  <section id="exp" class="fade">
+    <h2>经历</h2>
+    <p class="lead">时间线倒序，最近的放最上面</p>
+    <div class="tl">
+
+      <div class="item">
+        <h3>算法竞赛</h3>
+        <div class="when">2025 – 2026</div>
+        <p>
+          主攻图论与计算几何，长期使用 C++ 与 STL 实现算法。<br>
+          <b>2025 CCPC 东北邀请赛</b>　银牌<br>
+          <b>2026 ICPC 沈阳邀请赛</b>　铜牌<br>
+          <b>2026 蓝桥杯 C++ A 组</b>　国家二等奖
+        </p>
+      </div>
+
+      <div class="item">
+        <h3>吉林大学 · 软件工程</h3>
+        <div class="when">2024.09 – 2028.06（本科在读）</div>
+        <p>
+          主修数据结构与算法、计算机组成原理、操作系统、数据库系统、计算机网络等课程。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 联系 ==================== -->
+  <section id="contact" class="fade">
+    <h2>联系我</h2>
+    <p class="lead">找实习中，欢迎交流</p>
+    <div class="contact">
+      <a class="ct" href="https://github.com/cha0son" target="_blank" rel="noopener">
+        <div class="k">GitHub</div><div class="v">github.com/cha0son</div>
+      </a>
+      <a class="ct" href="你的简历.pdf" target="_blank">
+        <div class="k">简历</div><div class="v">下载 PDF 版</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <div>© <span id="year"></span> chaoson · 吉林大学软件工程</div>
+  <div class="tip">
+    手写 HTML/CSS，无框架 · 托管于 GitHub Pages ·
+    <a href="recommender.html">CF 题目推荐器</a> ·
+    <a href="compiler/">在线编译器</a>
+  </div>
 </footer>
 
-<div id="toast"></div>
-
 <script>
-(function(){
-"use strict";
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-var CF_API   = "https://codeforces.com/api/";
-var DATA_URL = "data/problems.json";
-var LS_KEY   = "cfrec.data.v3";
-var LS_PREFS = "cfrec.prefs.v1";
-var MIN_R = 800, MAX_R = 3500, STEP = 100;
-var SIGMA = 110;
-var MAX_CARDS = 60;
-
-function $(id){ return document.getElementById(id); }
-function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
-function clamp(x, a, b){ return Math.min(b, Math.max(a, x)); }
-function esc(s){
-  return String(s).replace(/[&<>"']/g, function(c){
-    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  // 滚动淡入
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade').forEach((el, i) => {
+    el.style.transitionDelay = Math.min(i * 60, 240) + 'ms';
+    io.observe(el);
   });
-}
-function fmt(n){ return Number(n).toLocaleString("en-US"); }
-
-var CF_URL = "https://codeforces.com/problemset/problem/";
-
-// 1858B -> https://codeforces.com/problemset/problem/1858/B
-function cfUrlOf(tag){
-  var cid = String(tag).match(/^(\d+)/)[1];
-  return CF_URL + cid + "/" + String(tag).slice(cid.length);
-}
-
-/* ---------------- 状态 ---------------- */
-var state = {
-  payload: null,
-  readerSet: new Set(),
-  problems: [],
-  tagDict: [],            // 标签名数组，下标即编号
-  tagIndex: new Map(),    // 标签名 -> 编号
-  sel: new Set(),         // 当前选中的标签名（只用于筛选，不显示在卡片上）
-  manualRating: null,     // 用户手输的 rating
-  maxSolved: 1,
-  minCid: 1,
-  maxCid: 1,
-  lo: 1200,
-  hi: 1600,
-  challenge: "mid",
-  profile: null,
-  seed: 0.42,
-  sort: "score",
-  lang: "zh-CN"
-};
-
-/* ---------------- 工具 ---------------- */
-function rankColor(r){
-  if (r >= 2400) return "#ff5757";
-  if (r >= 2100) return "#ff9f45";
-  if (r >= 1900) return "#c48bff";
-  if (r >= 1600) return "#5b9dff";
-  if (r >= 1400) return "#2dd4bf";
-  if (r >= 1200) return "#4ade80";
-  return "#9aa0a6";
-}
-
-function hash(n, seed){
-  var x = Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-var toastTimer = null;
-function toast(msg, isErr){
-  var t = $("toast");
-  t.textContent = msg;
-  t.className = "show" + (isErr ? " err" : "");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.className = isErr ? "err" : ""; }, 3800);
-}
-
-// 拖动滑条时每帧最多重算一次，避免卡顿
-var rafPending = false;
-function scheduleRender(){
-  if (rafPending) return;
-  rafPending = true;
-  requestAnimationFrame(function(){ rafPending = false; render(); });
-}
-
-/* ---------------- 解码 ---------------- */
-function decode(payload){
-  state.payload  = payload;
-  state.tagDict  = payload.tags || [];
-  state.tagIndex = new Map(state.tagDict.map(function(t, i){ return [t, i]; }));
-  // 兼容旧快照（无标签）：r[5] 不存在时给空数组
-  state.problems = payload.p.map(function(r){
-    return {
-      cid: r[0], idx: r[1], name: r[2], rating: r[3], solved: r[4],
-      tags: r[5] || []
-    };
-  });
-  var mx = 1, mn = Infinity, mc = 0;
-  for (var i = 0; i < state.problems.length; i++){
-    var p = state.problems[i];
-    if (p.solved > mx) mx = p.solved;
-    if (p.cid > mc) mc = p.cid;
-    if (p.cid < mn) mn = p.cid;
-  }
-  state.maxSolved = mx; state.maxCid = mc; state.minCid = mn;
-  renderChips();
-}
-
-/* ---------------- 标签筛选 UI ----------------
-   只做筛选，不在题目卡片上展示标签。
-   每个标签后面显示的人数按当前难度区间统计。
------------------------------------------------- */
-function tagCounts(){
-  var c = new Array(state.tagDict.length);
-  for (var i = 0; i < c.length; i++) c[i] = 0;
-  for (var j = 0; j < state.problems.length; j++){
-    var p = state.problems[j];
-    if (p.rating < state.lo || p.rating > state.hi) continue;
-    for (var k = 0; k < p.tags.length; k++) c[p.tags[k]]++;
-  }
-  return c;
-}
-
-function renderChips(){
-  var box = $("chips");
-  if (!box) return;
-  var counts = tagCounts();
-  var order = state.tagDict
-    .map(function(t, i){ return { t: t, i: i, n: counts[i] }; })
-    .filter(function(x){ return x.n > 0 || state.sel.has(x.t); })
-    .sort(function(a, b){ return b.n - a.n; });
-
-  box.innerHTML = order.map(function(x){
-    var on = state.sel.has(x.t) ? " on" : "";
-    return '<button class="chip' + on + '" data-tag="' + esc(x.t) + '">' +
-      esc(x.t) + '<span class="n">' + fmt(x.n) + "</span></button>";
-  }).join("");
-}
-
-function refreshChipCounts(){
-  var box = $("chips");
-  if (!box) return;
-  var counts = tagCounts();
-  var btns = box.children;
-  for (var i = 0; i < btns.length; i++){
-    var name = btns[i].getAttribute("data-tag");
-    var idx = state.tagIndex.get(name);
-    var n = btns[i].querySelector(".n");
-    if (n && idx !== undefined) n.textContent = fmt(counts[idx]);
-  }
-}
-
-/* ---------------- 数据加载 ---------------- */
-// 读 reader/manifest.json：哪些题已经生成过离线阅读页
-async function loadManifest(){
-  try {
-    var r = await fetch("reader/manifest.json", {cache: "no-cache"});
-    if (!r.ok) return;
-    var j = await r.json();
-    state.readerSet = new Set(j.ids || []);
-  } catch(e){
-    state.readerSet = new Set();
-  }
-}
-
-async function boot(){
-  skeleton(8);
-  await loadManifest();
-  var cached = null;
-  try {
-    var raw = localStorage.getItem(LS_KEY);
-    if (raw) cached = JSON.parse(raw);
-  } catch(e){}
-
-  var bundled = null;
-  try {
-    var r = await fetch(DATA_URL, {cache: "no-cache"});
-    if (r.ok) bundled = await r.json();
-  } catch(e){}
-
-  var payload = null;
-  if (cached && bundled) payload = (cached.gen || 0) > (bundled.gen || 0) ? cached : bundled;
-  else payload = cached || bundled;
-
-  if (payload){
-    decode(payload);
-    finishLoad(payload.gen);
-  } else {
-    $("statusText").textContent = "本地快照缺失，尝试直连 API…";
-    $("dot").className = "dot warn";
-    try {
-      await syncFromApi(true);
-    } catch (e){
-      $("dot").className = "dot err";
-      $("statusText").textContent = "题库加载失败";
-      renderEmpty("题库加载失败", "无法读取本地快照，且连接 Codeforces API 失败。请检查网络后刷新页面。");
-    }
-  }
-}
-
-function finishLoad(gen){
-  var d = new Date(gen * 1000);
-  var stamp = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-  $("dot").className = "dot";
-  $("statusText").textContent = "共 " + fmt(state.problems.length) + " 道有评级的题目 · 数据 " + stamp;
-  $("footMeta").textContent = "题库快照 " + stamp + " · " + fmt(state.problems.length) + " 题";
-  render();
-}
-
-async function syncFromApi(silent){
-  if (!silent) toast("正在从 Codeforces 拉取题库，约 2 MB…");
-  var res = await fetch(CF_API + "problemset.problems", {cache: "no-store"});
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  var j = await res.json();
-  if (j.status !== "OK") throw new Error(j.comment || "API 返回失败");
-
-  var stats = new Map();
-  j.result.problemStatistics.forEach(function(s){
-    stats.set(s.contestId + s.index, s.solvedCount || 0);
-  });
-
-  var tagSet = new Set();
-  j.result.problems.forEach(function(p){
-    (p.tags || []).forEach(function(t){ tagSet.add(t); });
-  });
-  var tags = Array.from(tagSet).sort();
-  var tidx = new Map(tags.map(function(t, i){ return [t, i]; }));
-
-  var rows = [];
-  j.result.problems.forEach(function(p){
-    if (!p.rating || !p.contestId) return;
-    var tl = (p.tags || []).map(function(t){ return tidx.get(t); })
-                           .sort(function(a, b){ return a - b; });
-    rows.push([p.contestId, p.index, p.name, p.rating,
-               stats.get(p.contestId + p.index) || 0, tl]);
-  });
-  rows.sort(function(a, b){ return a[0] - b[0] || (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0); });
-
-  var payload = { v: 4, gen: Math.floor(Date.now() / 1000), tags: tags, p: rows };
-  try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch(e){}
-  decode(payload);
-  finishLoad(payload.gen);
-  if (!silent) toast("已同步，共 " + fmt(rows.length) + " 题");
-  return payload;
-}
-
-/* ---------------- 打分 ---------------- */
-// 分位数（输入需已升序）
-function quantile(sorted, q){
-  if (!sorted || !sorted.length) return null;
-  var pos = (sorted.length - 1) * q;
-  var lo = Math.floor(pos), hi = Math.ceil(pos);
-  if (lo === hi) return sorted[lo];
-  return Math.round(sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo));
-}
-
-/**
- * 目标难度。
- *
- * 关键：没有官方 rating 时不再假装 1200。
- * profile.est 是从提交记录推出来的（见 analyze），推不出来就是 null，
- * 这时直接用区间中点，不做任何难度偏移。
- */
-function targetRating(){
-  var mid = (state.lo + state.hi) / 2;
-  var base = effectiveLevel();
-  if (base == null) return clamp(mid, state.lo, state.hi);
-
-  var delta = {easy: 0, mid: 150, hard: 300}[state.challenge];
-  return clamp(base + delta, state.lo, state.hi);
-}
-
-/**
- * 当前「水平」来源，优先级：
- *   1. 账号分析推出来的 est
- *   2. 用户手输的 rating
- *   3. null（不知道）
- */
-function effectiveLevel(){
-  var prof = state.profile;
-  if (prof && prof.est != null) return prof.est;
-  if (state.manualRating != null) return state.manualRating;
-  return null;
-}
-
-/**
- * 按水平算一个适合练习的难度带：下方留 100 缓冲，上方留 300 拔高。
- * 1500 -> 1400-1800
- */
-function autoBand(base){
-  var lo = Math.floor((base - 100) / 100) * 100;
-  var hi = Math.ceil((base + 300) / 100) * 100;
-  lo = clamp(lo, MIN_R, MAX_R - STEP);
-  hi = clamp(hi, lo + STEP, MAX_R);
-  return [lo, hi];
-}
-
-// 有水平信息就自动把区间调过去；返回是否应用
-function applyAutoBand(){
-  var base = effectiveLevel();
-  if (base == null){ updateBandHint(); return false; }
-  var band = autoBand(base);
-  state.lo = band[0];
-  state.hi = band[1];
-  $("lo").value = state.lo;
-  $("hi").value = state.hi;
-  paintSlider();
-  updateBandHint();
-  return true;
-}
-
-function updateBandHint(){
-  var el = $("bandHint");
-  if (!el) return;
-  var base = effectiveLevel();
-  var prof = state.profile;
-  var src;
-  if (base == null){
-    el.textContent = "还没有你的水平信息——填「我的 rating」或分析账号，就能自动匹配练习难度。";
-    return;
-  }
-  if (prof && prof.est != null){
-    src = prof.estSrc === "official" ? ("你的 rating " + prof.est) : ("估算水平 " + prof.est);
-  } else {
-    src = "你填的 rating " + base;
-  }
-  el.textContent = "已按" + src + " 自动匹配 " + state.lo + "–" + state.hi +
-                   "（可手动拖动滑块覆盖）";
-}
-
-function makeCtx(seed){
-  var prof = state.profile;
-  var selIdx = new Set();
-  state.sel.forEach(function(t){
-    var i = state.tagIndex.get(t);
-    if (i !== undefined) selIdx.add(i);
-  });
-  var base = effectiveLevel();
-  return {
-    target: targetRating(),
-    level: base,
-    profile: prof,
-    known: base != null,
-    selIdx: selIdx,
-    maxAc: prof ? (prof.maxAc || 0) : 0,
-    maxSolved: state.maxSolved,
-    minCid: state.minCid,
-    maxCid: state.maxCid,
-    seed: seed
-  };
-}
-
-function score(p, c){
-  // 难度契合（高斯）：离目标难度越近越高
-  var diff = p.rating - c.target;
-  var D = Math.exp(-(diff * diff) / (2 * SIGMA * SIGMA));
-
-  // 明显超出历史最好成绩的题打折：AC 最高 1400 的人推 2000 分是浪费
-  if (c.maxAc && p.rating > c.maxAc + 300) D *= 0.5;
-  else if (c.maxAc && p.rating > c.maxAc + 200) D *= 0.75;
-
-  // 标签契合：选中标签时，命中越多排得越前（标签只在内部用于排序）
-  var T = 0.5;
-  if (c.selIdx.size && p.tags.length){
-    var hit = 0;
-    for (var i = 0; i < p.tags.length; i++){
-      if (c.selIdx.has(p.tags[i])) hit++;
-    }
-    T = Math.min(1, hit / Math.min(c.selIdx.size, 2));
-  }
-
-  // 质量：通过数取对数归一
-  var Q = Math.log1p(p.solved) / Math.log1p(Math.max(c.maxSolved, 2));
-  // 新鲜度：contestId 越大越新
-  var F = (p.cid - c.minCid) / Math.max(1, c.maxCid - c.minCid);
-  // 抖动：让「换一批」真的换一批
-  var J = hash(p.cid * 1000 + p.idx.charCodeAt(0) * 7 + (p.idx.charCodeAt(1) || 0), c.seed);
-
-  return 0.50 * D + 0.10 * T + 0.22 * Q + 0.08 * F + 0.10 * J;
-}
-
-/* ---------------- 推荐理由 ---------------- */
-function reasons(p, c){
-  var out = [];
-  var prof = c.profile;
-  var lvl = c.level;
-
-  if (lvl != null){
-    var d = p.rating - lvl;
-    if (Math.abs(d) <= 150) out.push("贴着你的水平 " + lvl);
-    else if (d > 0) out.push("比你的水平高 " + d + " 分");
-    else out.push("低于你的水平 " + (-d) + " 分，巩固用");
-
-    if (prof && prof.failed && prof.failed.has(p.cid + p.idx)){
-      out.push("你试过但没过，可以再战");
-    } else if (prof && prof.maxAc && p.rating > prof.maxAc + 200){
-      out.push("超出你 AC 过的最高题 " + (p.rating - prof.maxAc) + " 分");
-    }
-  } else if (prof){
-    out.push("账号信息不足以判断水平，按区间中点 " + c.target + " 分");
-  } else {
-    out.push("区间目标 " + c.target + " 分");
-  }
-
-  if (out.length < 2){
-    if (p.solved >= 20000) out.push("高热度经典题");
-    else if (state.maxCid - p.cid < 45) out.push("近期新题");
-  }
-  return out.slice(0, 2).join(" · ");
-}
-
-/* ---------------- 渲染 ---------------- */
-function currentPool(){
-  var lo = state.lo, hi = state.hi;
-  var prof = state.profile;
-
-  var selIdx = new Set();
-  state.sel.forEach(function(t){
-    var i = state.tagIndex.get(t);
-    if (i !== undefined) selIdx.add(i);
-  });
-
-  var pool = [];
-  for (var i = 0; i < state.problems.length; i++){
-    var p = state.problems[i];
-    if (p.rating < lo || p.rating > hi) continue;
-    if (prof && prof.solved.has(p.cid + p.idx)) continue;
-    // 标签筛选：命中任一选中标签即可
-    if (selIdx.size){
-      var hit = false;
-      for (var k = 0; k < p.tags.length; k++){
-        if (selIdx.has(p.tags[k])){ hit = true; break; }
-      }
-      if (!hit) continue;
-    }
-    pool.push(p);
-  }
-  return pool;
-}
-
-function render(){
-  refreshChipCounts();
-  var pool = currentPool();
-  $("count").textContent = fmt(pool.length);
-
-  if (!pool.length){
-    renderEmpty("没有符合条件的题目",
-      state.sel.size
-        ? "选中的标签在当前难度区间里没有题，先把标签清掉或放宽难度。"
-        : "试试放宽难度区间，或者换个挑战度。");
-    return;
-  }
-
-  var ctx = makeCtx(state.seed);
-  var scored = pool.map(function(p){ return { p: p, s: score(p, ctx) }; });
-
-  switch (state.sort){
-    case "solved":
-      scored.sort(function(a, b){ return b.p.solved - a.p.solved || b.s - a.s; });
-      break;
-    case "rating-asc":
-      scored.sort(function(a, b){ return a.p.rating - b.p.rating || b.s - a.s; });
-      break;
-    case "rating-desc":
-      scored.sort(function(a, b){ return b.p.rating - a.p.rating || b.s - a.s; });
-      break;
-    case "new":
-      scored.sort(function(a, b){
-        return b.p.cid - a.p.cid || (a.p.idx < b.p.idx ? -1 : a.p.idx > b.p.idx ? 1 : 0);
-      });
-      break;
-    default:
-      scored.sort(function(a, b){ return b.s - a.s; });
-  }
-
-  var grid = $("grid");
-  grid.innerHTML = "";
-  var frag = document.createDocumentFragment();
-  var slice = scored.slice(0, MAX_CARDS);
-
-  slice.forEach(function(item){
-    var p = item.p;
-    var tag = p.cid + p.idx;
-    var cfUrl = cfUrlOf(tag);
-    // 洛谷题号规则: CF + 比赛号 + 题目字母，例如 1858B -> CF1858B
-    var luoguUrl = "https://www.luogu.com.cn/problem/CF" + tag;
-
-    var el = document.createElement("div");
-    el.className = "card";
-    el.style.setProperty("--c", rankColor(p.rating));
-    el.innerHTML =
-      '<a class="hit" href="' + luoguUrl + '" target="_blank" rel="noopener" ' +
-        'aria-label="' + esc(tag) + " " + esc(p.name) + '在洛谷打开"></a>' +
-      '<div class="card-top"><span class="badge">' + p.rating + "</span>" +
-      '<span class="cidx">' + p.cid + esc(p.idx) + "</span></div>" +
-      "<h3>" + esc(p.name) + "</h3>" +
-      '<div class="why">' + esc(reasons(p, ctx)) + "</div>" +
-      '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-      '<span class="go">洛谷读题 →</span>' +
-      '<a class="cf" href="' + cfUrl + '" target="_blank" rel="noopener" title="在 Codeforces 打开（提交用）">CF ↗</a>' +
-      "</div>";
-    frag.appendChild(el);
-  });
-  grid.appendChild(frag);
-
-  if (scored.length > MAX_CARDS){
-    var more = document.createElement("div");
-    more.className = "empty";
-    more.style.gridColumn = "1/-1";
-    more.style.padding = "18px";
-    more.innerHTML = "<p>共 " + fmt(scored.length) + " 道符合条件，只展示前 " + MAX_CARDS + " 道 · 点「换一批」看别的</p>";
-    grid.appendChild(more);
-  }
-}
-
-function renderEmpty(title, msg){
-  $("grid").innerHTML = '<div class="empty"><h4>' + esc(title) + "</h4><p>" + esc(msg) + "</p></div>";
-}
-
-function skeleton(n){
-  var h = "";
-  for (var i = 0; i < n; i++) h += '<div class="skel"></div>';
-  $("grid").innerHTML = h;
-}
-
-/* ---------------- 每日一题 ---------------- */
-function daily(){
-  var pool = currentPool();
-  if (!pool.length){ toast("当前条件下没有题目，先放宽筛选", true); return; }
-
-  var d = new Date();
-  var seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-  var ctx = makeCtx((seed % 1000) / 997);
-  pool.sort(function(a, b){ return score(b, ctx) - score(a, ctx); });
-
-  var p = pool[Math.floor(hash(seed, 0.5) * Math.min(pool.length, 25))];
-
-  var grid = $("grid");
-  grid.innerHTML = "";
-  var dtag = p.cid + p.idx;
-  var dCf = cfUrlOf(dtag);
-  var el = document.createElement("div");
-  el.className = "card";
-  el.style.setProperty("--c", rankColor(p.rating));
-  el.style.gridColumn = "1/-1";
-  el.style.padding = "30px";
-  el.innerHTML =
-    '<a class="hit" href="https://www.luogu.com.cn/problem/CF' + dtag + '" ' +
-      'target="_blank" rel="noopener" aria-label="' + esc(dtag) + " " + esc(p.name) + '"></a>' +
-    '<div class="card-top"><span class="badge" style="font-size:14px;padding:4px 11px">' + p.rating + "</span>" +
-    '<span class="cidx">' + p.cid + esc(p.idx) + " · 今日一题</span></div>" +
-    '<h3 style="font-size:23px;-webkit-line-clamp:3">' + esc(p.name) + "</h3>" +
-    '<div class="why" style="font-size:13px">' + esc(reasons(p, makeCtx(0.5))) + "</div>" +
-    '<div class="foot"><span>' + fmt(p.solved) + " 人通过</span>" +
-    '<span class="go" style="opacity:1">洛谷读题 →</span>' +
-    '<a class="cf" href="' + dCf + '" target="_blank" rel="noopener">CF ↗</a>' +
-    "</div>";
-  grid.appendChild(el);
-
-  var b = $("banner");
-  b.className = "banner show";
-  b.innerHTML = "📅 <b>" + d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate() +
-                "</b> 的每日一题 —— 当天所有人看到的是同一道。";
-  $("count").textContent = fmt(pool.length);
-}
-
-/* ---------------- 账号分析 ---------------- */
-async function cfCall(method, params){
-  var qs = new URLSearchParams(params).toString();
-  var res = await fetch(CF_API + method + "?" + qs, {cache: "no-store"});
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  var j = await res.json();
-  if (j.status !== "OK") throw new Error(j.comment || "API 失败");
-  return j.result;
-}
-
-async function analyze(){
-  var handle = $("handle").value.trim();
-  if (!handle){ toast("先输入一个 Codeforces 用户名", true); return; }
-
-  var btn = $("btnAnalyze");
-  btn.disabled = true;
-  btn.textContent = "查询中…";
-  try {
-    var info = (await cfCall("user.info", {handles: handle}))[0];
-    await sleep(2100);
-    btn.textContent = "拉取提交…";
-    var subs = await cfCall("user.status", {handle: info.handle, from: 1, count: 10000});
-
-    var solved = new Set();
-    var seen = new Set();
-    var solvedRatings = [];
-    var failed = new Set();
-    var maxAc = 0;
-
-    for (var i = 0; i < subs.length; i++){
-      var s = subs[i];
-      if (!s.problem || !s.problem.contestId) continue;
-      var key = s.problem.contestId + s.problem.index;
-      if (s.verdict === "OK"){
-        if (seen.has(key)) continue;
-        seen.add(key);
-        solved.add(key);
-        var r = s.problem.rating;
-        if (r){
-          solvedRatings.push(r);
-          if (r > maxAc) maxAc = r;
-        }
-      } else if (!seen.has(key)){
-        failed.add(key);
-      }
-    }
-
-    // ---- 水平估计：优先官方 rating，其次从过题记录推 ----
-    solvedRatings.sort(function(a, b){ return a - b; });
-    var official = (typeof info.rating === "number") ? info.rating : null;
-    var est = null, estSrc = "none", basis = "";
-
-    if (official != null){
-      est = official;
-      estSrc = "official";
-      basis = "Codeforces 官方 rating";
-    } else if (solvedRatings.length >= 5){
-      var q60 = quantile(solvedRatings, 0.6);
-      est = Math.round((q60 + 50) / 50) * 50;   // 取整到 50
-      estSrc = "solved";
-      basis = "未定级；按 " + solvedRatings.length + " 道已 AC 题目的 60% 分位（" + q60 + "）估算";
-    } else if (solvedRatings.length > 0){
-      est = Math.round((maxAc + 150) / 50) * 50;
-      estSrc = "solved-few";
-      basis = "未定级；只 AC 过 " + solvedRatings.length + " 道有评分的题（最高 " + maxAc + "），粗估";
-    } else {
-      estSrc = "none";
-      basis = "账号里没有带评分的过题记录，无法判断水平";
-    }
-
-    state.profile = {
-      handle: info.handle,
-      official: official,
-      maxRating: (typeof info.maxRating === "number") ? info.maxRating : null,
-      est: est,
-      estSrc: estSrc,
-      basis: basis,
-      solved: solved,
-      failed: failed,
-      maxAc: maxAc,
-      solvedWithRating: solvedRatings.length,
-      p75: solvedRatings.length ? quantile(solvedRatings, 0.75) : null
-    };
-
-    try {
-      localStorage.setItem(LS_PREFS, JSON.stringify({
-        handle: info.handle, lo: state.lo, hi: state.hi,
-        rating: state.manualRating, challenge: state.challenge
-      }));
-    } catch(e){}
-
-    renderProfile();
-    if (est != null) applyAutoBand();   // 有水平信息就自动匹配难度
-    else updateBandHint();
-    syncHash();
-    render();
-    toast("已分析 " + info.handle + "：读了 " + fmt(subs.length) + " 次提交，通过 " +
-          fmt(solved.size) + " 道题" +
-          (est == null ? "（无法判断水平）" : "，水平约 " + est));
-  } catch (e){
-    var msg = String(e.message || e);
-    if (/Failed to fetch|NetworkError|Load failed/i.test(msg)){
-      msg = "连不上 Codeforces API（浏览器到 cf 的连接被断），可能需要科学上网";
-    } else if (/not found/i.test(msg)){
-      msg = "找不到这个 Codeforces 用户，检查一下拼写";
-    } else if (/limit exceeded/i.test(msg)){
-      msg = "Codeforces API 限流了（每 2 秒只能请求一次），等几秒再试";
-    }
-    toast("分析失败：" + msg, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "分析";
-  }
-}
-
-function renderProfile(){
-  var p = state.profile;
-  var el = $("profile");
-  if (!p){ el.className = "profile"; el.innerHTML = ""; return; }
-
-  var cells = ['<span class="handle">' + esc(p.handle) + "</span>"];
-
-  if (p.official != null){
-    cells.push('<span><span class="k">官方 rating</span> <span class="v" style="color:' +
-      rankColor(p.official) + '">' + p.official + "</span></span>");
-  } else {
-    cells.push('<span><span class="k">官方 rating</span> <span class="v" style="color:var(--dim)">未定级</span></span>');
-  }
-
-  if (p.est != null){
-    cells.push('<span><span class="k">' + (p.estSrc === "official" ? "水平" : "估算水平") +
-      '</span> <span class="v" style="color:' + rankColor(p.est) + '">' + p.est + "</span></span>");
-  } else {
-    cells.push('<span><span class="k">水平</span> <span class="v" style="color:var(--bad)">无法判断</span></span>');
-  }
-
-  cells.push('<span><span class="k">已通过</span> <span class="v">' + fmt(p.solved.size) + "</span></span>");
-  if (p.maxAc) {
-    cells.push('<span><span class="k">最高 AC</span> <span class="v" style="color:' +
-      rankColor(p.maxAc) + '">' + p.maxAc + "</span></span>");
-  }
-  cells.push('<button class="ghost" id="btnReset" style="margin-left:auto">清除</button>');
-
-  el.className = "profile show";
-  el.innerHTML = cells.join("") +
-    '<div style="flex-basis:100%;font-size:12px;color:var(--dim);margin-top:2px">' +
-    esc(p.basis) +
-    (p.est == null ? "。建议手动把难度区间调到你想练的档位。" : "") +
-    (p.failed.size ? " · 曾尝试未通过 " + fmt(p.failed.size) + " 道" : "") +
-    "</div>";
-
-  $("btnReset").onclick = function(){
-    state.profile = null;
-    $("handle").value = "";
-    try { localStorage.removeItem(LS_PREFS); } catch(e){}
-    renderProfile();
-    render();
-  };
-}
-
-/* ---------------- URL 状态 ---------------- */
-function syncHash(){
-  var parts = ["lo=" + state.lo, "hi=" + state.hi, "c=" + state.challenge];
-  if (state.sel.size){
-    parts.push("t=" + Array.from(state.sel).map(encodeURIComponent).join(","));
-  }
-  if (state.manualRating != null) parts.push("r=" + state.manualRating);
-  history.replaceState(null, "", "#" + parts.join("&"));
-}
-
-function readHash(){
-  var h = location.hash.replace(/^#/, "");
-  if (!h) return;
-  var q = new URLSearchParams(h);
-  if (q.has("lo")) state.lo = clamp(+q.get("lo") || 1200, MIN_R, MAX_R - STEP);
-  if (q.has("hi")) state.hi = clamp(+q.get("hi") || 1600, state.lo + STEP, MAX_R);
-  if (q.has("c") && ["easy","mid","hard"].indexOf(q.get("c")) >= 0) state.challenge = q.get("c");
-  if (q.has("r")){
-    var r = +q.get("r");
-    if (r >= MIN_R && r <= MAX_R) state.manualRating = r;
-  }
-  if (q.has("t")){
-    q.get("t").split(",").forEach(function(t){
-      var name = decodeURIComponent(t);
-      if (state.tagIndex.has(name)) state.sel.add(name);
-    });
-  }
-}
-
-/* ---------------- 控件绑定 ---------------- */
-function paintSlider(){
-  var lp = (state.lo - MIN_R) / (MAX_R - MIN_R) * 100;
-  var hp = (state.hi - MIN_R) / (MAX_R - MIN_R) * 100;
-  var fill = $("fill");
-  fill.style.left = lp + "%";
-  fill.style.width = Math.max(0, hp - lp) + "%";
-  $("rangeLabel").textContent = state.lo + " – " + state.hi;
-  var mid = (MIN_R + MAX_R) / 2;
-  $("lo").style.zIndex = state.lo > mid ? 5 : 3;
-  $("hi").style.zIndex = state.lo > mid ? 3 : 5;
-
-  // 高亮当前匹配的快捷区间
-  var ps = $("presets");
-  if (ps && ps.children){
-    Array.prototype.forEach.call(ps.children, function(x){
-      x.classList.toggle("on", +x.dataset.lo === state.lo && +x.dataset.hi === state.hi);
-    });
-  }
-}
-
-function bind(){
-  var lo = $("lo"), hi = $("hi");
-
-  lo.addEventListener("input", function(){
-    state.lo = Math.min(+lo.value, state.hi - STEP);
-    lo.value = state.lo;
-    paintSlider(); updateBandHint(); syncHash(); scheduleRender();
-  });
-  hi.addEventListener("input", function(){
-    state.hi = Math.max(+hi.value, state.lo + STEP);
-    hi.value = state.hi;
-    paintSlider(); updateBandHint(); syncHash(); scheduleRender();
-  });
-
-  $("seg").addEventListener("click", function(e){
-    var b = e.target.closest("button[data-c]");
-    if (!b) return;
-    state.challenge = b.dataset.c;
-    Array.prototype.forEach.call($("seg").children, function(x){
-      x.classList.toggle("on", x === b);
-    });
-    $("challengeHint").textContent = {
-      easy: "目标难度就压在区间内你的 rating 上，稳扎稳打。",
-      mid:  "目标难度落在区间内你的 rating 之上约 150 分。",
-      hard: "目标难度高于你的 rating 约 300 分，会比较吃力。"
-    }[state.challenge];
-    syncHash(); render();
-  });
-
-  // 快捷难度区间
-  $("presets").addEventListener("click", function(e){
-    var b = e.target.closest("button[data-lo]");
-    if (!b) return;
-    state.lo = +b.dataset.lo;
-    state.hi = +b.dataset.hi;
-    $("lo").value = state.lo;
-    $("hi").value = state.hi;
-    paintSlider(); updateBandHint(); syncHash(); render();
-  });
-
-  // 手输 rating：自动匹配练习难度
-  var myRating = $("myRating");
-  function onRatingInput(){
-    var v = parseInt(myRating.value, 10);
-    state.manualRating = (isFinite(v) && v >= MIN_R && v <= MAX_R) ? v : null;
-    if (state.manualRating != null) applyAutoBand();
-    else updateBandHint();
-    try {
-      localStorage.setItem(LS_PREFS, JSON.stringify({
-        handle: $("handle").value.trim() || null,
-        rating: state.manualRating,
-        challenge: state.challenge
-      }));
-    } catch(e){}
-    syncHash(); render();
-  }
-  myRating.addEventListener("input", onRatingInput);
-  myRating.addEventListener("change", onRatingInput);
-
-  // 标签筛选（只筛选，不在卡片上显示）
-  $("chips").addEventListener("click", function(e){
-    var b = e.target.closest("button[data-tag]");
-    if (!b) return;
-    var t = b.getAttribute("data-tag");
-    if (state.sel.has(t)) state.sel.delete(t); else state.sel.add(t);
-    b.classList.toggle("on");
-    syncHash(); render();
-  });
-
-  $("btnClearTags").addEventListener("click", function(){
-    state.sel.clear();
-    renderChips();            // 重建，清除 on 状态
-    syncHash(); render();
-  });
-
-  $("sort").addEventListener("change", function(e){ state.sort = e.target.value; render(); });
-
-  $("btnShuffle").addEventListener("click", function(){
-    state.seed = Math.random();
-    $("banner").className = "banner";
-    render();
-  });
-
-  $("btnDaily").addEventListener("click", daily);
-
-  $("btnAnalyze").addEventListener("click", analyze);
-  $("handle").addEventListener("keydown", function(e){ if (e.key === "Enter") analyze(); });
-
-  $("btnSync").addEventListener("click", async function(e){
-    var b = e.currentTarget;
-    b.disabled = true; b.textContent = "同步中…";
-    try { await syncFromApi(false); }
-    catch (err){ toast("同步失败：" + err.message, true); }
-    finally { b.disabled = false; b.textContent = "同步最新题库"; }
-  });
-}
-
-/* ---------------- 启动 ---------------- */
-async function main(){
-  bind();
-  await boot();
-
-  try {
-    var prefs = JSON.parse(localStorage.getItem(LS_PREFS) || "null");
-    if (prefs && prefs.handle) $("handle").value = prefs.handle;
-    if (prefs && typeof prefs.rating === "number") state.manualRating = prefs.rating;
-  } catch(e){}
-
-  readHash();
-  if (state.manualRating != null) $("myRating").value = state.manualRating;
-  paintSlider();
-  Array.prototype.forEach.call($("seg").children, function(x){
-    x.classList.toggle("on", x.dataset.c === state.challenge);
-  });
-  $("lo").value = state.lo;
-  $("hi").value = state.hi;
-  renderChips();
-  updateBandHint();
-  if (state.problems.length) render();
-  $("sort").value = state.sort;
-
-  // 深链接：?id=1858B 直接跳到洛谷对应题面，方便把某道题发给别人
-  try {
-    var want = new URLSearchParams(location.search).get("id");
-    if (want){
-      var m = String(want).trim().toUpperCase().match(/^(\d+)\s*[/-]?\s*([A-Z]\d*)$/);
-      if (m) location.replace("https://www.luogu.com.cn/problem/CF" + m[1] + m[2]);
-    }
-  } catch(e){}
-}
-
-main();
-})();
 </script>
 </body>
 </html>

@@ -1,7 +1,8 @@
 # 维护说明
 
-主页 `index.html` 是「CF 题目推荐器」。点任意题目卡片会**直接跳到洛谷对应题面**，
-不在站内渲染题面。
+站点首页 `index.html` 是**个人主页**（内容来自 `index.backup.html`，2026.11 恢复）。
+原来的「CF 题目推荐器」已改名 `recommender.html`，从首页导航进入。推荐器里点任意题目卡片会
+**直接跳到洛谷对应题面**，不在站内渲染题面。
 
 ## 一、题库快照 `data/problems.json`
 
@@ -49,7 +50,7 @@ python _build\transform.py     # 生成 data/problems.json
 也就是 `CF + contestId + index`。代码里是 `CF_URL` / `luoguUrl` 那一行。
 每张卡片右下角还有一个 `CF ↗` 小链接，用于去 Codeforces 提交。
 
-深链接：`https://cha0son.github.io/?id=1858B` 会直接跳到洛谷该题。
+深链接：`https://cha0son.github.io/recommender.html?id=1858B` 会直接跳到洛谷该题。
 
 ### 为什么不在站内抓题面
 
@@ -122,9 +123,11 @@ URL 里也会带上状态，可直接分享：
 
 | 文件 | 作用 |
 |---|---|
-| `index.html` | 推荐器（单文件，无构建） |
-| `index.v1.html` | 旧版个人主页简历 |
+| `index.html` | 个人主页（内容恢复自 `index.backup.html`） |
+| `recommender.html` | CF 题目推荐器（原 `index.html`，2026.11 改名） |
 | `compiler/` | 在线编译器（`index.html` + `engine.js` + `app.js`） |
+| `index.backup.html` | 个人主页备份原件（恢复来源，保留） |
+| `index.v1.html` | 带动态效果的旧版个人主页 |
 | `data/problems.json` | 题库快照（schema v4，带标签） |
 | `_build/transform.py` | 快照生成脚本 |
 | `_build/smoke.js` | 数据 + 打分逻辑断言 |
@@ -161,6 +164,9 @@ URL 里也会带上状态，可直接分享：
 
 ## 八、改完怎么验证
 
+> `check-syntax.js` / `dom-test.js` 现在读的是 `recommender.html`（推荐器逻辑）；
+> 首页是纯静态个人主页，只有年份和滚动淡入，没有需要单测的逻辑。
+
 ```powershell
 node _build\check-syntax.js
 node _build\smoke.js
@@ -168,7 +174,7 @@ node _build\dom-test.js
 node _build\compiler-test.js
 
 # 本地看效果
-node _build\serve.js 8123     # 打开 http://127.0.0.1:8123/compiler/
+node _build\serve.js 8123     # 首页 http://127.0.0.1:8123/ ，编译器 /compiler/
 
 # 可选：真浏览器点一遍（需要先 npm i puppeteer-core）
 node _build\compiler-browser-test.js

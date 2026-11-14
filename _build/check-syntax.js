@@ -1,11 +1,12 @@
-/* 从 index.html 抽出内联 <script> 做语法检查（不执行）。
+/* 从 recommender.html 抽出内联 <script> 做语法检查（不执行）。
+   （2026.11 起站点首页恢复为个人主页，推荐器改名为 recommender.html）
    用法: node _build/check-syntax.js
 */
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const file = path.resolve(__dirname, "..", "index.html");
+const file = path.resolve(__dirname, "..", "recommender.html");
 const html = fs.readFileSync(file, "utf8");
 
 const m = html.match(/<script>([\s\S]*?)<\/script>/);

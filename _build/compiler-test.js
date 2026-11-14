@@ -94,9 +94,16 @@ test("页面有 5 个语言入口 / 运行按钮提示", () => {
   assert.match(html, /在线编译器/);
 });
 
-test("主页链接到 compiler/", () => {
+test("首页与推荐器页都有 compiler/ 入口", () => {
+  ["index.html", "recommender.html"].forEach((name) => {
+    const page = fs.readFileSync(path.join(ROOT, name), "utf8");
+    assert.ok(page.includes('href="compiler/"'), name + " 没有编译器入口");
+  });
+});
+
+test("首页链接到 recommender.html（推荐器没被弄丢）", () => {
   const home = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
-  assert.ok(home.includes('href="compiler/"'), "主页没有编译器入口");
+  assert.ok(home.includes('href="recommender.html"'), "首页没有推荐器入口");
 });
 
 test("高亮样式类齐全", () => {

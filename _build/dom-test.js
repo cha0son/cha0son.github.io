@@ -1,4 +1,5 @@
-/* 用最小 DOM 垫片在 Node 里真跑一遍 index.html 的内联脚本。
+/* 用最小 DOM 垫片在 Node 里真跑一遍 recommender.html 的内联脚本。
+   （站点首页已恢复为个人主页，推荐器改名为 recommender.html）
    目的: 验证 main() 端到端不抛异常、能渲染出卡片(chip 38 个 / card > 0)。
    用法: node _build/dom-test.js
 */
@@ -7,7 +8,7 @@ const path = require("path");
 const vm = require("vm");
 
 const ROOT = path.resolve(__dirname, "..");
-const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+const html = fs.readFileSync(path.join(ROOT, "recommender.html"), "utf8");
 const js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const dataRaw = fs.readFileSync(path.join(ROOT, "data", "problems.json"), "utf8");
 
