@@ -124,21 +124,55 @@ URL 里也会带上状态，可直接分享：
 |---|---|
 | `index.html` | 推荐器（单文件，无构建） |
 | `index.v1.html` | 旧版个人主页简历 |
+| `compiler/` | 在线编译器（`index.html` + `engine.js` + `app.js`） |
 | `data/problems.json` | 题库快照（schema v4，带标签） |
 | `_build/transform.py` | 快照生成脚本 |
 | `_build/smoke.js` | 数据 + 打分逻辑断言 |
 | `_build/dom-test.js` | 用 DOM 垫片跑页面脚本的端到端断言 |
 | `_build/check-syntax.js` | 内联脚本语法 + DOM id 引用检查 |
+| `_build/compiler-test.js` | 编译器逻辑 / 页面结构测试（44 项，不联网） |
+| `_build/compiler-browser-test.js` | 编译器真浏览器端到端（可选，需要 puppeteer-core + 联网） |
+| `_build/serve.js` | 本地静态服务器（`node _build/serve.js 8123`） |
 | `reader/` | 早前的离线题面页（历史遗留，未再更新） |
 | `food-recommender/` | 食物推荐 demo |
 | `DEPLOY.md` | GitHub Pages 部署教程 |
 
-## 五、改完怎么验证
+## 七、在线编译器 `/compiler/`
+
+页面是纯静态的，编译运行靠公共 API，所以 GitHub Pages 能直接托管：
+
+| 角色 | 服务 | 说明 |
+|---|---|---|
+| 主后端 | [Judge0 CE](https://ce.judge0.com) | `POST /submissions?wait=true&base64_encoded=true`，开 CORS，匿名可用 |
+| 备后端 | [Wandbox](https://wandbox.org) | 主后端网络/限流/内部错误时自动切；它本身也常出故障，属尽力而为 |
+
+几个实现上必须记住的点：
+
+- **必须用 `base64_encoded=true`**。实测 Judge0 对非 UTF-8 安全的请求体直接
+  返回 400 `some attributes ... cannot be converted to UTF-8`，中文 stdin 会挂。
+- 提交的 `cpu_time_limit` 是 5 秒、`wall_time_limit` 15 秒，前端整体超时 30 秒。
+- 编译器只支持 **C++17 / C11 / Python 3.13 / Java 17 / Node 22** 五种；
+  改语言要同时改 `engine.js` 里的 `judge0.id` 和 `wandbox.compiler`。
+- 编辑器是 `textarea`（透明文字）叠在高亮 `<pre>` 上，两边字号/行高/内边距必须完全
+  一致（CSS 变量 `--code-fs` / `--code-lh`），否则光标和着色会错位。滚动靠 JS 同步。
+- 代码草稿只写 `localStorage`（key `cha0son.compiler.v1`），不会上传；分享链接把代码
+  塞进 `#s=` 的 base64url 里，纯前端还原。
+- 后端挂了要能说清原因：错误面板会列出每个后端的失败原因，不要只报「运行失败」。
+
+## 八、改完怎么验证
 
 ```powershell
 node _build\check-syntax.js
 node _build\smoke.js
 node _build\dom-test.js
+node _build\compiler-test.js
+
+# 本地看效果
+node _build\serve.js 8123     # 打开 http://127.0.0.1:8123/compiler/
+
+# 可选：真浏览器点一遍（需要先 npm i puppeteer-core）
+node _build\compiler-browser-test.js
+
 git add . && git commit -m "..." && git push
 ```
 

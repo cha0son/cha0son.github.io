@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>在线编译器 · cha0son</title>
+<meta name="description" content="在线编译运行 C++17 / C11 / Python 3 / Java 17 / Node 22。浏览器里写代码、给 stdin、看编译错误与运行结果，无需安装。">
+<meta name="theme-color" content="#0b0d10">
+<meta property="og:type" content="website">
+<meta property="og:title" content="在线编译器 · cha0son">
+<meta property="og:description" content="C++17 / C11 / Python 3 / Java 17 / Node 22，在浏览器里直接编译运行">
+<meta property="og:url" content="https://cha0son.github.io/compiler/">
+<link rel="canonical" href="https://cha0son.github.io/compiler/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0d10'/%3E%3Ctext x='32' y='43' font-size='24' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%233b82f6'%3E%26lt%3B%2F%26gt%3B%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0d10; --surface:#14171c; --surface2:#1b1f26; --border:#262b34;
+    --text:#e6e9ef; --muted:#8b93a1; --dim:#5d6470; --accent:#3b82f6; --accent2:#22d3ee;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+    --code-bg:#0f1216; --radius:12px;
+    --mono:"JetBrains Mono","Cascadia Code",ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+    --code-fs:13px; --code-lh:21px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text); min-height:100vh;
+    font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;
+    display:flex; flex-direction:column; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  kbd{font-family:var(--mono);font-size:10.5px;padding:1px 5px;border-radius:4px;
+      border:1px solid #2f3846;background:#1a1f27;color:#9aa7b8}
+
+  /* ---------------- 顶部 ---------------- */
+  .top{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    padding:10px 18px;border-bottom:1px solid var(--border);
+    background:rgba(11,13,16,.86);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20;
+  }
+  .brand-row{display:flex;align-items:center;gap:10px;min-width:0}
+  .back{
+    color:var(--muted);font-size:12.5px;padding:5px 10px;border:1px solid var(--border);
+    border-radius:8px;transition:.15s;white-space:nowrap;
+  }
+  .back:hover{border-color:#3b4c66;color:var(--text)}
+  .slash{color:#333c4a}
+  h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+  .badge{
+    font-size:10.5px;color:#8fb8ff;background:rgba(59,130,246,.14);
+    border:1px solid rgba(59,130,246,.28);border-radius:99px;padding:1px 8px;white-space:nowrap;
+  }
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ghost{
+    padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);font-size:12.5px;transition:.15s;
+  }
+  .ghost:hover{border-color:#3b4c66;color:var(--text);background:var(--surface2)}
+  .backend{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);
+    padding:3px 9px;border:1px solid var(--border);border-radius:99px;white-space:nowrap;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:#4b5563;display:inline-block;transition:.2s}
+  .dot.ok{background:var(--green);box-shadow:0 0 7px var(--green)}
+  .dot.warn{background:var(--amber);box-shadow:0 0 7px var(--amber)}
+  .dot.err{background:var(--red);box-shadow:0 0 7px var(--red)}
+
+  /* ---------------- 语言栏 ---------------- */
+  .langbar{
+    display:flex;align-items:center;gap:10px;padding:8px 16px;
+    border-bottom:1px solid var(--border);background:var(--surface);
+  }
+  .lang-tabs{
+    display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 16px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 16px),transparent);
+    padding-right:2px;
+  }
+  .lang-tabs::-webkit-scrollbar{display:none}
+  .lang{
+    display:inline-flex;align-items:baseline;gap:6px;padding:6px 12px;border-radius:8px;
+    border:1px solid transparent;color:var(--muted);font-size:12.5px;white-space:nowrap;transition:.14s;
+  }
+  .lang small{font-size:10px;color:var(--dim);font-family:var(--mono)}
+  .lang:hover{color:var(--text);background:var(--surface2)}
+  .lang.on{color:#dbeafe;background:rgba(59,130,246,.13);border-color:rgba(59,130,246,.35)}
+  .lang.on small{color:#7fa9e8}
+  .run{
+    display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:9px;
+    font-weight:600;font-size:13px;color:#fff;white-space:nowrap;flex:none;
+    background:linear-gradient(135deg,#3b82f6,#2563eb);
+    box-shadow:0 3px 14px rgba(37,99,235,.3);transition:.15s;
+  }
+  .run:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.38)}
+  .run:disabled{opacity:.6;cursor:wait;transform:none;box-shadow:none}
+  .run kbd{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.18);color:#dbeafe}
+  .run .spin{
+    width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;animation:spin .8s linear infinite;
+  }
+
+  /* ---------------- 工作区 ---------------- */
+  .workspace{
+    flex:1;min-height:0;display:grid;gap:12px;padding:12px 16px;
+    grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);
+  }
+  .pane{
+    display:flex;flex-direction:column;min-height:0;min-width:0;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+  }
+  .pane-head{
+    display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:38px;
+    border-bottom:1px solid var(--border);background:linear-gradient(180deg,#171b21,#14171c);
+  }
+  .pane-head .label{
+    font-size:11px;letter-spacing:.8px;color:var(--dim);text-transform:uppercase;font-weight:600;
+    white-space:nowrap;
+  }
+  .pane-head .hint{
+    font-size:11px;color:#4c5665;margin-left:auto;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .file{font-family:var(--mono);font-size:12px;color:#9ec5ff}
+  .mini{
+    font-size:11px;color:var(--dim);padding:2px 8px;border-radius:6px;border:1px solid var(--border);
+    background:var(--surface2);transition:.14s;white-space:nowrap;
+  }
+  .mini:hover{color:var(--text);border-color:#3b4c66}
+
+  /* ---------------- 编辑器 ---------------- */
+  .editor{flex:1;display:grid;grid-template-columns:auto minmax(0,1fr);min-height:0;background:var(--code-bg)}
+  .editor:focus-within{box-shadow:inset 0 0 0 1px rgba(59,130,246,.22)}
+  .gutter{
+    overflow:hidden;padding:12px 8px 12px 12px;text-align:right;color:#414b5a;
+    font-family:var(--mono);font-size:var(--code-fs);line-height:var(--code-lh);
+    user-select:none;background:#0d1014;border-right:1px solid #1b2027;
+  }
+  .gutter span{display:block;height:var(--code-lh)}
+  .code-area{position:relative;min-width:0;min-height:0}
+  .highlight,#code{
+    position:absolute;inset:0;margin:0;border:0;padding:12px 16px;
+    font-family:var(--mono);font-size:var(--code-fs);line-height:var(--code-lh);
+    letter-spacing:0;font-variant-ligatures:none;white-space:pre;tab-size:2;-moz-tab-size:2;
+    background:transparent;
+  }
+  .highlight{overflow:hidden;pointer-events:none;color:#cfd6e2;z-index:0}
+  #code{
+    resize:none;color:transparent;caret-color:#e6e9ef;z-index:1;width:100%;height:100%;
+    outline:none;overflow:auto;
+  }
+  #code::selection{background:rgba(59,130,246,.32);color:transparent}
+  #code::-webkit-scrollbar,.highlight::-webkit-scrollbar,.stdin-text::-webkit-scrollbar,
+  .output::-webkit-scrollbar,.out-text::-webkit-scrollbar{width:10px;height:10px}
+  #code::-webkit-scrollbar-track,.stdin-text::-webkit-scrollbar-track,.output::-webkit-scrollbar-track{background:transparent}
+  #code::-webkit-scrollbar-thumb,.stdin-text::-webkit-scrollbar-thumb,.output::-webkit-scrollbar-thumb,
+  .out-text::-webkit-scrollbar-thumb{background:#2a3341;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+
+  /* 语法着色 */
+  .tok-c{color:#6b7f5e;font-style:italic}
+  .tok-s{color:#ce9178}
+  .tok-p{color:#569cd6}
+  .tok-n{color:#b5cea8}
+  .tok-k{color:#c586c0}
+  .tok-t{color:#4ec9b0}
+  .tok-fn{color:#dcdcaa}
+
+  /* ---------------- 右侧 ---------------- */
+  .side{display:grid;grid-template-rows:minmax(110px,.34fr) minmax(0,.66fr);gap:12px;min-height:0;min-width:0}
+  .stdin-text{
+    flex:1;width:100%;min-height:0;resize:none;border:0;outline:none;padding:12px 14px;
+    background:transparent;color:#cfd6e2;font-family:var(--mono);font-size:12.5px;line-height:1.7;
+  }
+  .meta{
+    display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;
+    font-size:11px;color:var(--muted);
+  }
+  .dim{color:var(--dim)}
+  .stat{display:inline-flex;gap:4px;align-items:baseline;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stat b{font-weight:500;color:var(--dim)}
+  .verdict{
+    font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;letter-spacing:.3px;
+    border:1px solid transparent;white-space:nowrap;
+  }
+  .verdict.ac{color:#4ade80;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
+  .verdict.ce,.verdict.re{color:#fca5a5;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.32)}
+  .verdict.tle{color:#fcd34d;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.32)}
+  .verdict.ie{color:#cbd5e1;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.3)}
+
+  .output{flex:1;overflow:auto;padding:12px 14px;min-height:0}
+  .out-block{margin-bottom:14px}
+  .out-block:last-child{margin-bottom:0}
+  .out-title{
+    font-size:10.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--dim);
+    margin-bottom:5px;font-weight:600;
+  }
+  .out-text{
+    margin:0;font-family:var(--mono);font-size:12.5px;line-height:1.62;
+    white-space:pre-wrap;word-break:break-word;color:#d7deea;background:#0e1217;
+    border:1px solid #1e242c;border-radius:8px;padding:10px 12px;max-height:42vh;overflow:auto;
+  }
+  .out-block.err .out-text{color:#fca5a5;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.05)}
+  .out-block.warn .out-text{color:#fcd34d;border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04)}
+  .empty{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    height:100%;min-height:120px;color:var(--dim);text-align:center;font-size:12.5px;
+  }
+  .empty p{margin:0}
+  .empty-kbd{
+    font-family:var(--mono);font-size:11.5px;color:#7d8ba0;border:1px solid var(--border);
+    background:var(--surface2);padding:4px 10px;border-radius:7px;
+  }
+  .running{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px;padding:8px 2px}
+  .running .elapsed{font-variant-numeric:tabular-nums;color:var(--dim);font-family:var(--mono);font-size:11.5px}
+  .spinner{
+    width:14px;height:14px;border-radius:50%;border:2px solid #2b3441;border-top-color:var(--accent);
+    animation:spin .8s linear infinite;flex:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fail-hint{font-size:12px;color:var(--muted);line-height:1.75}
+  .fail-hint code{font-family:var(--mono);font-size:11.5px;color:#9ec5ff}
+  .fail-hint ul{margin:6px 0 0;padding-left:18px;color:var(--dim)}
+
+  /* ---------------- 底部 ---------------- */
+  footer{
+    display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;
+    padding:9px 16px 12px;font-size:11px;color:#5a6372;border-top:1px solid var(--border);
+  }
+  footer a{color:#6b8fc4}
+  footer a:hover{color:#9ec5ff;text-decoration:underline}
+  .sep{color:#333c4a}
+
+  #toast{
+    position:fixed;left:50%;bottom:64px;transform:translate(-50%,16px);
+    background:#1b2230;border:1px solid #33405a;color:#e6e9ef;font-size:12.5px;
+    padding:9px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;
+    z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:min(92vw,460px);text-align:center;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #toast.err{border-color:#7f2d2d;background:#2a1a1a}
+
+  /* ---------------- 响应式 ---------------- */
+  @media (max-width:980px){
+    html,body{height:auto}
+    body{min-height:100vh}
+    .top{position:static}
+    .langbar{position:sticky;top:0;z-index:18;box-shadow:0 1px 0 var(--border)}
+    .workspace{
+      grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(300px,52vh) auto;overflow:visible;
+    }
+    .side{grid-template-rows:150px 44vh}
+    .lang small{display:none}
+  }
+  @media (max-width:640px){
+    .top{padding:8px 12px;gap:8px}
+    h1{font-size:14px}
+    .badge{display:none}
+    .workspace{padding:8px;gap:8px}
+    .side{grid-template-rows:120px 40vh}
+    .run kbd{display:none}
+    .pane-head .hint{display:none}
+    footer{font-size:10.5px;padding-bottom:16px}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand-row">
+    <a class="back" href="../" title="返回主页">← 主页</a>
+    <span class="slash">/</span>
+    <h1>在线编译器</h1>
+    <span class="badge">C++ / C / Py / Java / JS</span>
+  </div>
+  <div class="top-actions">
+    <span class="backend" id="backend" title="编译后端状态">
+      <span class="dot" id="backendDot"></span><span id="backendText">后端：自动</span>
+    </span>
+    <button class="ghost" id="btnShare" type="button" title="复制包含当前代码和输入的分享链接">分享</button>
+    <button class="ghost" id="btnReset" type="button" title="恢复当前语言的默认模板">重置</button>
+  </div>
+</header>
+
+<nav class="langbar" aria-label="选择编程语言">
+  <div class="lang-tabs" id="langs" role="tablist"></div>
+  <button class="run" id="run" type="button" title="运行（Ctrl + Enter）">
+    <span class="run-label">运行</span><kbd>Ctrl</kbd><kbd>↵</kbd>
+  </button>
+</nav>
+
+<main class="workspace">
+  <section class="pane editor-pane">
+    <div class="pane-head">
+      <span class="file" id="filename">main.cpp</span>
+      <span class="hint">Tab 缩进 · Shift+Tab 反缩进 · Ctrl+Enter 运行</span>
+    </div>
+    <div class="editor" id="editor">
+      <div class="gutter" id="gutter" aria-hidden="true"></div>
+      <div class="code-area">
+        <pre class="highlight" id="highlight" aria-hidden="true"></pre>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"
+                  wrap="off" aria-label="源代码"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="side">
+    <section class="pane stdin-pane">
+      <div class="pane-head">
+        <span class="label">标准输入</span>
+        <button class="mini" id="btnClearStdin" type="button">清空</button>
+      </div>
+      <textarea class="stdin-text" id="stdin" spellcheck="false" placeholder="程序运行时读到的内容，例如：3 5"></textarea>
+    </section>
+
+    <section class="pane out-pane">
+      <div class="pane-head">
+        <span class="label">运行结果</span>
+        <div class="meta" id="meta" aria-live="polite"><span class="dim">尚未运行</span></div>
+        <button class="mini" id="btnCopyOut" type="button" title="复制输出">复制</button>
+      </div>
+      <div class="output" id="output">
+        <div class="empty">
+          <div class="empty-kbd">Ctrl + Enter</div>
+          <p>写好代码后点「运行」，或按 Ctrl + Enter。</p>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+
+<footer>
+  <span>代码会发送到 <a href="https://judge0.com" target="_blank" rel="noopener">Judge0 CE</a> 编译运行，草稿只存在本机浏览器</span>
+  <span class="sep">·</span>
+  <a href="../">返回主页</a>
+  <span class="sep">·</span>
+  <a href="https://github.com/cha0son/cha0son.github.io" target="_blank" rel="noopener">源码</a>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<noscript>
+  <p style="padding:20px;color:#fca5a5">这个页面需要 JavaScript 才能运行编译器。</p>
+</noscript>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
