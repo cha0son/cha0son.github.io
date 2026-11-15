@@ -28,6 +28,7 @@
     backendDot: $("backendDot"),
     backendText: $("backendText"),
     backend: $("backend"),
+    complete: $("complete"),
     toast: $("toast"),
     editor: $("editor")
   };
@@ -39,7 +40,8 @@
     lastText: "",
     gutterLines: 0,
     saveTimer: null,
-    elapsedTimer: null
+    elapsedTimer: null,
+    completion: { open: false, items: [], index: 0, start: 0, word: "" }
   };
 
   /* ================= 存储 ================= */
@@ -126,6 +128,7 @@
 
   function switchLang(key) {
     if (key === state.lang) return;
+    hideCompletion();
     saveDraftNow();
     setLang(key);
     els.code.focus();
@@ -249,6 +252,20 @@
   }
 
   function onCodeKeydown(e) {
+    // 补全面板打开时，方向键/回车/Tab/Esc 归它管
+    if (state.completion.open && !e.ctrlKey && !e.metaKey && !e.altKey && !e.isComposing) {
+      var k = e.key;
+      if (k === "ArrowDown") { e.preventDefault(); moveCompletion(1); return; }
+      if (k === "ArrowUp") { e.preventDefault(); moveCompletion(-1); return; }
+      if (k === "Enter" || (k === "Tab" && !e.shiftKey)) { e.preventDefault(); acceptCompletion(); return; }
+      if (k === "Escape") { e.preventDefault(); hideCompletion(); return; }
+      if (k === "Tab" && e.shiftKey) { hideCompletion(); }
+      if (k === "ArrowLeft" || k === "ArrowRight" || k === "Home" || k === "End" ||
+          k === "PageUp" || k === "PageDown") {
+        hideCompletion();
+      }
+    }
+
     if (e.key === "Tab") {
       e.preventDefault();
       handleTab(e.shiftKey);
@@ -257,6 +274,145 @@
     if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey && !e.isComposing) {
       handleEnter(e);
     }
+  }
+
+  /* ================= 自动补全 ================= */
+
+  var COMPLETE_LIMIT = 8;
+
+  /** 光标前正在输入的那个词；少于 2 个字符或存在选区时返回 null。 */
+  function currentWordPrefix() {
+    var ta = els.code;
+    if (ta.selectionStart !== ta.selectionEnd) return null;
+    var pos = ta.selectionStart;
+    var m = ta.value.slice(0, pos).match(/[A-Za-z_][A-Za-z0-9_]*$/);
+    if (!m || m[0].length < 2) return null;
+    return { word: m[0], start: pos - m[0].length };
+  }
+
+  /** 用一个不可见的镜像 div 算出光标在屏幕上的位置。 */
+  function caretPoint(pos) {
+    var ta = els.code;
+    var rect = ta.getBoundingClientRect();
+    var cs = getComputedStyle(ta);
+    var mirror = document.createElement("div");
+    mirror.style.position = "fixed";
+    mirror.style.visibility = "hidden";
+    mirror.style.left = rect.left + "px";
+    mirror.style.top = rect.top + "px";
+    mirror.style.width = ta.clientWidth + "px";
+    mirror.style.height = ta.clientHeight + "px";
+    mirror.style.overflow = "hidden";
+    mirror.style.whiteSpace = "pre";
+    mirror.style.boxSizing = "border-box";
+    mirror.style.pointerEvents = "none";
+    ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing",
+      "textTransform", "textIndent", "wordSpacing", "tabSize", "MozTabSize",
+      "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"].forEach(function (prop) {
+      if (cs[prop]) mirror.style[prop] = cs[prop];
+    });
+
+    mirror.textContent = ta.value.slice(0, pos);
+    var mark = document.createElement("span");
+    mark.textContent = ta.value.slice(pos) || "\u200b";
+    mirror.appendChild(mark);
+    document.body.appendChild(mirror);
+    var r = mark.getBoundingClientRect();
+    document.body.removeChild(mirror);
+
+    return {
+      left: r.left - ta.scrollLeft,
+      top: r.top - ta.scrollTop,
+      bottom: r.bottom - ta.scrollTop
+    };
+  }
+
+  function hideCompletion() {
+    var st = state.completion;
+    if (!st.open && !els.complete.innerHTML) return;
+    st.open = false;
+    st.items = [];
+    st.index = 0;
+    els.complete.hidden = true;
+    els.complete.innerHTML = "";
+  }
+
+  function renderCompletion() {
+    var st = state.completion;
+    els.complete.innerHTML = "";
+    st.items.forEach(function (item, i) {
+      var row = document.createElement("div");
+      row.className = "c-item" + (i === st.index ? " on" : "");
+      row.setAttribute("role", "option");
+      row.dataset.index = String(i);
+
+      var word = document.createElement("span");
+      word.className = "c-word";
+      word.textContent = item.word;
+      var kind = document.createElement("span");
+      kind.className = "c-kind";
+      kind.textContent = item.kind;
+
+      row.appendChild(word);
+      row.appendChild(kind);
+      els.complete.appendChild(row);
+    });
+  }
+
+  function positionCompletion() {
+    var st = state.completion;
+    if (!st.open) return;
+    var pt = caretPoint(els.code.selectionStart);
+    var pop = els.complete;
+    pop.style.left = "0px";
+    pop.style.top = "0px";
+    var pw = pop.offsetWidth;
+    var ph = pop.offsetHeight;
+    var left = Math.max(8, Math.min(pt.left, window.innerWidth - pw - 8));
+    var top = pt.bottom + 4;
+    if (top + ph > window.innerHeight - 8) top = Math.max(8, pt.top - ph - 4);
+    pop.style.left = Math.round(left) + "px";
+    pop.style.top = Math.round(top) + "px";
+  }
+
+  function updateCompletion() {
+    if (state.running) { hideCompletion(); return; }
+    var info = currentWordPrefix();
+    if (!info) { hideCompletion(); return; }
+    if (els.code.value.length > 200000) { hideCompletion(); return; }
+
+    var items = E.completionsFor(state.lang, info.word, els.code.value, COMPLETE_LIMIT);
+    if (!items.length) { hideCompletion(); return; }
+
+    var st = state.completion;
+    st.open = true;
+    st.items = items;
+    st.index = 0;
+    st.start = info.start;
+    st.word = info.word;
+    els.complete.hidden = false;
+    renderCompletion();
+    positionCompletion();
+  }
+
+  function moveCompletion(delta) {
+    var st = state.completion;
+    if (!st.open || !st.items.length) return;
+    st.index = (st.index + delta + st.items.length) % st.items.length;
+    renderCompletion();
+    var row = els.complete.children[st.index];
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" });
+  }
+
+  function acceptCompletion() {
+    var st = state.completion;
+    if (!st.open || !st.items.length) return;
+    var item = st.items[st.index];
+    var ta = els.code;
+    ta.setSelectionRange(st.start, ta.selectionStart);
+    insertText(item.word);
+    hideCompletion();
+    ta.focus();
   }
 
   /* ================= 分享 ================= */
@@ -511,6 +667,7 @@
 
   function run() {
     if (state.running) return;
+    hideCompletion();
     var code = els.code.value;
     if (!code.trim()) {
       toast("先写点代码再运行", true);
@@ -573,6 +730,7 @@
   function resetTemplate() {
     var lang = E.getLang(state.lang);
     if (!window.confirm("恢复 " + lang.name + " 的默认模板？当前代码会被覆盖。")) return;
+    hideCompletion();
     delete state.drafts[state.lang];
     els.code.value = lang.template;
     els.stdin.value = E.DEFAULT_STDIN;
@@ -602,10 +760,28 @@
     els.code.addEventListener("input", function () {
       refreshEditor();
       scheduleSave();
+      updateCompletion();
     });
-    els.code.addEventListener("scroll", syncScroll);
+    els.code.addEventListener("scroll", function () {
+      syncScroll();
+      hideCompletion();
+    });
     els.code.addEventListener("keydown", onCodeKeydown);
+    els.code.addEventListener("blur", hideCompletion);
+    els.code.addEventListener("click", hideCompletion);
+    els.code.addEventListener("compositionstart", hideCompletion);
     els.stdin.addEventListener("input", scheduleSave);
+
+    els.complete.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    els.complete.addEventListener("click", function (e) {
+      var row = e.target && e.target.closest ? e.target.closest(".c-item") : null;
+      if (!row) return;
+      var idx = Number(row.dataset.index);
+      if (isFinite(idx)) {
+        state.completion.index = idx;
+        acceptCompletion();
+      }
+    });
 
     $("run").addEventListener("click", run);
     $("btnShare").addEventListener("click", share);
@@ -633,7 +809,10 @@
     });
 
     window.addEventListener("pagehide", saveDraftNow);
-    window.addEventListener("resize", syncScroll);
+    window.addEventListener("resize", function () {
+      syncScroll();
+      hideCompletion();
+    });
 
     if (shared) {
       try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}

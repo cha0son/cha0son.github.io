@@ -208,6 +208,91 @@
     (TYPES[k] || "").split(/\s+/).forEach(function (w) { if (w) TYPE_SETS[k][w] = true; });
   });
 
+  /* ------------------------------------------------------------------ */
+  /* 自动补全                                                            */
+  /* ------------------------------------------------------------------ */
+  /* 不做语义分析：就是「前缀匹配 + 常用词排前面 + 文里出现过的词跟上」。 */
+
+  var COMMON_WORDS = {
+    cpp: "vector string map set unordered_map unordered_set queue stack deque priority_queue pair tuple array bitset " +
+         "sort reverse unique lower_bound upper_bound max_element min_element accumulate iota memset memcpy printf " +
+         "scanf getline cin cout cerr endl ios sync_with_stdio tie push_back emplace_back pop_back front back begin " +
+         "end size empty clear insert erase find count first second make_pair using namespace std int long double " +
+         "char bool void const auto return if else for while switch case break continue sizeof nullptr true false " +
+         "struct class template typename typedef include define unsigned signed",
+    c: "printf scanf puts gets strlen strcpy strcmp strcat memcpy memset malloc calloc realloc free sizeof fopen " +
+       "fclose fprintf fscanf fgets fputs FILE int long double float char void struct typedef const static unsigned " +
+       "signed return if else for while do switch case break continue NULL include define bool true false",
+    py: "print input range len int str float list dict set tuple sorted sum min max map filter zip enumerate append " +
+        "extend split strip join replace format open read write readline sys math collections defaultdict Counter def " +
+        "return for while if elif else import from as class try except finally with lambda yield None True False in " +
+        "not and or is pass break continue self __init__ __name__ __main__ stdin stdout heapq bisect",
+    java: "System out println print printf Scanner nextInt nextLong nextLine BufferedReader InputStreamReader " +
+          "StringTokenizer String StringBuilder ArrayList HashMap HashSet Arrays Collections Math Integer Long Double " +
+          "Boolean Character public private protected static void class interface extends implements new return if " +
+          "else for while do switch case break continue try catch finally throws import package final int long double " +
+          "boolean char true false null this super main args",
+    js: "console log require fs readFileSync process stdin stdout JSON parse stringify Array Object String Number " +
+        "Boolean Math Date Map Set Promise async await function const let var return if else for while of in class " +
+        "new this try catch throw length push pop slice splice map filter reduce forEach sort join split trim toString " +
+        "parseInt parseFloat module exports"
+  };
+
+  var COMMON_CACHE = {};
+  function commonWords(langKey) {
+    if (!COMMON_CACHE[langKey]) {
+      COMMON_CACHE[langKey] = (COMMON_WORDS[langKey] || COMMON_WORDS.cpp).split(/\s+/).filter(Boolean);
+    }
+    return COMMON_CACHE[langKey];
+  }
+
+  /** 抽出源码里出现过的标识符，按出现次数降序。 */
+  function extractWords(text) {
+    var s = String(text == null ? "" : text);
+    if (s.length > 200000) s = s.slice(0, 200000);
+    var counts = {};
+    var re = /[A-Za-z_][A-Za-z0-9_]{1,39}/g;
+    var m;
+    while ((m = re.exec(s)) !== null) {
+      counts[m[0]] = (counts[m[0]] || 0) + 1;
+    }
+    return Object.keys(counts).map(function (w) {
+      return { word: w, count: counts[w] };
+    }).sort(function (a, b) {
+      return b.count - a.count || (a.word < b.word ? -1 : 1);
+    });
+  }
+
+  /**
+   * 根据前缀给出候选词。
+   * 顺序：常用符号 → 关键字 → 类型 → 当前代码里出现过的词。
+   * 返回 [{ word, kind }]，不含与输入完全相同的那一项。
+   */
+  function completionsFor(langKey, prefix, docText, limit) {
+    var p = String(prefix == null ? "" : prefix);
+    if (!p) return [];
+    var key = KW_SETS[langKey] ? langKey : "cpp";
+    var max = limit || 8;
+    var lower = p.toLowerCase();
+    var seen = {};
+    var out = [];
+
+    function add(word, kind) {
+      if (!word || seen[word]) return;
+      if (word.length <= p.length) return;
+      if (word.slice(0, p.length).toLowerCase() !== lower) return;
+      seen[word] = true;
+      out.push({ word: word, kind: kind });
+    }
+
+    commonWords(key).forEach(function (w) { add(w, "常用"); });
+    Object.keys(KW_SETS[key]).forEach(function (w) { add(w, "关键字"); });
+    Object.keys(TYPE_SETS[key]).forEach(function (w) { add(w, "类型"); });
+    extractWords(docText).forEach(function (it) { add(it.word, "文中"); });
+
+    return out.slice(0, max);
+  }
+
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
@@ -593,6 +678,8 @@
     escapeHtml: escapeHtml,
     highlight: highlight,
     countLines: countLines,
+    extractWords: extractWords,
+    completionsFor: completionsFor,
     statusLabel: statusLabel,
     formatSeconds: formatSeconds,
     formatKb: formatKb,

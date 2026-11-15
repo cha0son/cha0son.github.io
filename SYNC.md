@@ -133,7 +133,7 @@ URL 里也会带上状态，可直接分享：
 | `_build/smoke.js` | 数据 + 打分逻辑断言 |
 | `_build/dom-test.js` | 用 DOM 垫片跑页面脚本的端到端断言 |
 | `_build/check-syntax.js` | 内联脚本语法 + DOM id 引用检查 |
-| `_build/compiler-test.js` | 编译器逻辑 / 页面结构测试（44 项，不联网） |
+| `_build/compiler-test.js` | 编译器逻辑 / 页面结构测试（55 项，不联网） |
 | `_build/compiler-browser-test.js` | 编译器真浏览器端到端（可选，需要 puppeteer-core + 联网） |
 | `_build/serve.js` | 本地静态服务器（`node _build/serve.js 8123`） |
 | `reader/` | 早前的离线题面页（历史遗留，未再更新） |
@@ -161,6 +161,19 @@ URL 里也会带上状态，可直接分享：
 - 代码草稿只写 `localStorage`（key `cha0son.compiler.v1`），不会上传；分享链接把代码
   塞进 `#s=` 的 base64url 里，纯前端还原。
 - 后端挂了要能说清原因：错误面板会列出每个后端的失败原因，不要只报「运行失败」。
+
+### 自动补全
+
+输入 2 个以上字母时弹出候选，`↑/↓` 选择、`Enter`/`Tab` 接受、`Esc` 关闭，鼠标/触摸点也能选。
+候选顺序是「常用符号 → 关键字 → 类型 → 当前代码里出现过的词」，**不做语义分析**：
+
+- 词表在 `engine.js` 的 `COMMON_WORDS`，每种语言一份；要加词直接往字符串里丢。
+- `completionsFor(lang, prefix, docText, limit)` 是纯函数，单测覆盖。
+- 候选面板用 `position: fixed`，位置靠一个隐藏的镜像 `<div>` 量出光标坐标
+  （`caretPoint()`），所以字号/行高/内边距必须和编辑器保持一致；窗口 resize、滚动、
+  失焦、切语言、运行都会收起面板。
+- 补全插入走 `execCommand('insertText')`，和 Tab/回车缩进共用一套逻辑，保证能撤销。
+- `Shift+Tab` 仍然是反缩进，不会被补全面板劫持。
 
 ## 八、改完怎么验证
 

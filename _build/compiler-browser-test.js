@@ -141,7 +141,92 @@ async function waitVerdict(page, timeout) {
     assert.match(r.out, /\b8\b/);
   });
 
+  await check("自动补全：输入 vec 弹出 vector，Tab 接受", async () => {
+    await page.click('[data-lang="cpp"]');
+    await new Promise((r) => setTimeout(r, 200));
+    await page.evaluate(() => {
+      const code = document.getElementById("code");
+      code.value = "";
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+      code.focus();
+    });
+    await page.type("#code", "vec", { delay: 20 });
+    await page.waitForFunction(() => {
+      const p = document.getElementById("complete");
+      return p && !p.hidden && p.children.length > 0;
+    }, { timeout: 4000 });
+    const first = await page.evaluate(() => {
+      const p = document.getElementById("complete");
+      const r = p.getBoundingClientRect();
+      return { word: p.querySelector(".c-word").textContent, rect: { x: r.x, y: r.y, w: r.width, h: r.height } };
+    });
+    assert.strictEqual(first.word, "vector");
+    assert.ok(first.rect.w > 0 && first.rect.h > 0, "补全面板没有尺寸");
+    assert.ok(first.rect.x >= 0 && first.rect.y >= 0, "补全面板跑到视口外");
+
+    await page.keyboard.press("Tab");
+    const after = await page.evaluate(() => ({
+      value: document.getElementById("code").value,
+      hidden: document.getElementById("complete").hidden
+    }));
+    assert.strictEqual(after.value, "vector");
+    assert.ok(after.hidden, "接受候选后应关闭面板");
+  });
+
+  await check("自动补全：Esc 关闭、无候选时回车照常换行", async () => {
+    await page.evaluate(() => {
+      const code = document.getElementById("code");
+      code.value = "";
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+      code.focus();
+    });
+    await page.type("#code", "int a", { delay: 15 });
+    await page.keyboard.press("Enter");
+    const v = await page.evaluate(() => document.getElementById("code").value);
+    assert.strictEqual(v, "int a\n", "没有候选时回车应正常换行");
+
+    await page.evaluate(() => {
+      const code = document.getElementById("code");
+      code.value = "";
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+      code.focus();
+    });
+    await page.type("#code", "pri", { delay: 15 });
+    await page.waitForFunction(() => {
+      const p = document.getElementById("complete");
+      return p && !p.hidden && p.children.length > 0;
+    }, { timeout: 4000 });
+    await page.keyboard.press("Escape");
+    const r = await page.evaluate(() => ({
+      value: document.getElementById("code").value,
+      hidden: document.getElementById("complete").hidden
+    }));
+    assert.strictEqual(r.value, "pri");
+    assert.ok(r.hidden);
+  });
+
+  await check("自动补全：方向键选择后回车接受", async () => {
+    await page.evaluate(() => {
+      const code = document.getElementById("code");
+      code.value = "";
+      code.dispatchEvent(new Event("input", { bubbles: true }));
+      code.focus();
+    });
+    await page.type("#code", "pri", { delay: 15 });
+    await page.waitForFunction(() => {
+      const p = document.getElementById("complete");
+      return p && !p.hidden && p.children.length > 1;
+    }, { timeout: 4000 });
+    const second = await page.evaluate(() => document.querySelectorAll("#complete .c-word")[1].textContent);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    const v = await page.evaluate(() => document.getElementById("code").value);
+    assert.strictEqual(v, second, "回车应接受第二个候选 " + second);
+  });
+
   await check("分享链接能还原代码", async () => {
+    await page.click('[data-lang="py"]');
+    await new Promise((r) => setTimeout(r, 200));
     await page.click("#btnShare");
     await new Promise((r) => setTimeout(r, 400));
     const url = page.url();

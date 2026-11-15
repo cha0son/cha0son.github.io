@@ -81,7 +81,7 @@ test("页面没有外链 script（不依赖 CDN）", () => {
 const REQUIRED_IDS = [
   "code", "stdin", "highlight", "gutter", "filename", "langs", "run",
   "meta", "output", "backend", "backendDot", "backendText",
-  "btnShare", "btnReset", "btnClearStdin", "btnCopyOut", "toast"
+  "btnShare", "btnReset", "btnClearStdin", "btnCopyOut", "toast", "complete"
 ];
 test("页面包含所有关键 DOM id", () => {
   REQUIRED_IDS.forEach((id) => {
@@ -241,7 +241,65 @@ test("escapeHtml", () => {
 });
 
 /* ------------------------------------------------------------------ */
-console.log("\n=== 五、Judge0 结果归一化 ===");
+console.log("\n=== 五、自动补全 ===");
+
+test("常用词前缀匹配：vec → vector", () => {
+  const r = E.completionsFor("cpp", "vec", "", 8);
+  assert.strictEqual(r[0].word, "vector");
+  assert.strictEqual(r[0].kind, "常用");
+});
+
+test("关键字也能补：retu → return", () => {
+  const words = E.completionsFor("cpp", "retu", "", 8).map((x) => x.word);
+  assert.ok(words.includes("return"), "没有 return：" + words.join(","));
+});
+
+test("补全里带上代码中定义过的标识符", () => {
+  const doc = "int myValue = 0;\nint myVar = 1;\ncout << myValue;\n";
+  const r = E.completionsFor("cpp", "myVa", doc, 8);
+  assert.deepStrictEqual(r.map((x) => x.word), ["myValue", "myVar"]);
+  assert.strictEqual(r[0].kind, "文中");
+});
+
+test("输入完整单词后不再提示它自己", () => {
+  assert.deepStrictEqual(E.completionsFor("cpp", "vector", "vector<int> v;", 8), []);
+});
+
+test("大小写不敏感匹配，但保留原词大小写", () => {
+  const r = E.completionsFor("cpp", "VEC", "", 8);
+  assert.strictEqual(r[0].word, "vector");
+});
+
+test("空前缀返回空数组", () => {
+  assert.deepStrictEqual(E.completionsFor("cpp", "", "int x;", 8), []);
+});
+
+test("结果去重且受 limit 限制", () => {
+  const r = E.completionsFor("cpp", "i", "int i; if (i) i++;", 3);
+  assert.ok(r.length <= 3);
+  const words = r.map((x) => x.word);
+  assert.strictEqual(new Set(words).size, words.length);
+  const ints = E.completionsFor("cpp", "in", "int x; int y;", 20).map((x) => x.word);
+  assert.strictEqual(ints.filter((w) => w === "int").length, 1);
+});
+
+test("各语言使用各自的词表", () => {
+  assert.ok(E.completionsFor("py", "pri", "", 8).some((x) => x.word === "print"));
+  assert.ok(E.completionsFor("java", "Syst", "", 8).some((x) => x.word === "System"));
+  assert.ok(E.completionsFor("js", "cons", "", 8).some((x) => x.word === "console"));
+});
+
+test("未知语言回退到 C++ 词表", () => {
+  assert.ok(E.completionsFor("kotlin", "vec", "", 8).some((x) => x.word === "vector"));
+});
+
+test("extractWords 按出现次数排序", () => {
+  const r = E.extractWords("ab ab ab cd cd ef");
+  assert.deepStrictEqual(r.map((x) => x.word), ["ab", "cd", "ef"]);
+  assert.strictEqual(r[0].count, 3);
+});
+
+console.log("\n=== 六、Judge0 结果归一化 ===");
 
 test("AC", () => {
   const r = E.normalizeJudge0(j0({ stdout: b64("8\n"), time: "0.004", memory: 1020 }), 120);
@@ -281,7 +339,7 @@ test("请求体：base64 编码 + 时限", () => {
 });
 
 /* ------------------------------------------------------------------ */
-console.log("\n=== 六、Wandbox 结果归一化 ===");
+console.log("\n=== 七、Wandbox 结果归一化 ===");
 
 test("AC", () => {
   const r = E.normalizeWandbox({ status: "0", signal: "", compiler_error: "", program_output: "8\n", program_error: "" }, 200);
@@ -317,7 +375,7 @@ test("Wandbox 请求体：C++ 带 c++17 选项，Python 不带", () => {
 });
 
 /* ------------------------------------------------------------------ */
-console.log("\n=== 七、runCompile：结果与失败切换 ===");
+console.log("\n=== 八、runCompile：结果与失败切换 ===");
 
 (async function main() {
   await testAsync("Judge0 成功时返回 AC，且只调用一次", async () => {

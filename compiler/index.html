@@ -239,6 +239,25 @@
   #toast.show{opacity:1;transform:translate(-50%,0)}
   #toast.err{border-color:#7f2d2d;background:#2a1a1a}
 
+  /* ---------------- 自动补全 ---------------- */
+  .complete{
+    position:fixed;z-index:70;min-width:168px;max-width:280px;max-height:232px;overflow:auto;
+    padding:4px;background:#141a22;border:1px solid #2c3949;border-radius:9px;
+    box-shadow:0 14px 34px rgba(0,0,0,.6),0 0 0 1px rgba(59,130,246,.06);
+    font-family:var(--mono);
+  }
+  .complete[hidden]{display:none}
+  .c-item{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:4px 9px;border-radius:5px;cursor:pointer;color:#cfd6e2;font-size:12px;line-height:1.55;
+  }
+  .c-item:hover{background:rgba(59,130,246,.12)}
+  .c-item.on{background:rgba(59,130,246,.22);color:#fff}
+  .c-item .c-kind{font-size:10px;color:#5d6470;white-space:nowrap}
+  .c-item.on .c-kind{color:#9ec5ff}
+  .complete::-webkit-scrollbar{width:8px}
+  .complete::-webkit-scrollbar-thumb{background:#2a3341;border-radius:8px}
+
   /* ---------------- 响应式 ---------------- */
   @media (max-width:980px){
     html,body{height:auto}
@@ -292,7 +311,7 @@
   <section class="pane editor-pane">
     <div class="pane-head">
       <span class="file" id="filename">main.cpp</span>
-      <span class="hint">Tab 缩进 · Shift+Tab 反缩进 · Ctrl+Enter 运行</span>
+      <span class="hint">Tab 缩进 · 输入时自动补全 · Ctrl+Enter 运行</span>
     </div>
     <div class="editor" id="editor">
       <div class="gutter" id="gutter" aria-hidden="true"></div>
@@ -336,6 +355,8 @@
   <span class="sep">·</span>
   <a href="https://github.com/cha0son/cha0son.github.io" target="_blank" rel="noopener">源码</a>
 </footer>
+
+<div id="complete" class="complete" role="listbox" aria-label="自动补全候选" hidden></div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
